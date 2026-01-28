@@ -1,0 +1,45 @@
+spring:
+  config:
+    activate:
+      on-profile: prod
+  datasource:
+    url: ${DATABASE_URL}
+    username: ${DATABASE_USERNAME}
+    password: ${DATABASE_PASSWORD}
+    driver-class-name: org.postgresql.Driver
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+  rabbitmq:
+    host: ${RABBITMQ_HOST}
+    port: ${RABBITMQ_PORT:5672}
+    username: ${RABBITMQ_USERNAME}
+    password: ${RABBITMQ_PASSWORD}
+    virtual-host: ${RABBITMQ_VHOST:/}
+    listener:
+      simple:
+        concurrency: 2
+        max-concurrency: 5
+        acknowledge-mode: manual
+  data:
+    redis:
+      url: ${REDIS_URL}
+
+app:
+  temp-directory: ${APP_TEMP_DIRECTORY:/tmp/devsecwatch}
+
+ai:
+  service:
+    url: ${AI_SERVICE_URL}
+
+rabbitmq:
+  queue:
+    scans: scan-jobs
+
+logging:
+  level:
+    root: INFO
+    com.devsecwatch: INFO

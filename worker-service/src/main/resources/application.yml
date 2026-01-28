@@ -1,0 +1,44 @@
+spring:
+  application:
+    name: devsecwatch-worker
+  main:
+    web-application-type: none
+  datasource:
+    url: ${DATABASE_URL:jdbc:postgresql://127.0.0.1:5433/devsecwatch}
+    username: ${DATABASE_USERNAME:postgres}
+    password: ${DATABASE_PASSWORD:postgres}
+    driver-class-name: org.postgresql.Driver
+  jpa:
+    hibernate:
+      ddl-auto: update
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+  rabbitmq:
+    addresses: amqp://guest:guest@127.0.0.1:5672
+    listener:
+      simple:
+        concurrency: 1
+        max-concurrency: 3
+        acknowledge-mode: manual
+  data:
+    redis:
+      url: ${REDIS_URL:redis://127.0.0.1:6379}
+
+app:
+  temp-directory: ${TEMP_DIR:/tmp/devsecwatch}
+
+ai:
+  service:
+    url: ${AI_SERVICE_URL:http://localhost:8000}
+
+rabbitmq:
+  queue:
+    scans: scan-jobs
+
+logging:
+  level:
+    root: INFO
+    com.devsecwatch: DEBUG
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - [CorrelationId=%X{correlationId}] %msg%n"
