@@ -1,7 +1,6 @@
 import { useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useScanStore } from '../store/scanStore';
-import { useAuthStore } from '../store/authStore';
 
 import Layout from '../components/Layout';
 

@@ -1,5 +1,5 @@
 import api from './api';
-import { Scan, ScanRequest, ScanResponse, PaginatedResponse } from '../types';
+import { ScanRequest, ScanResponse, PaginatedResponse } from '../types';
 
 export const scanService = {
     async createScan(repoUrl: string, branch: string = 'main'): Promise<ScanResponse> {
