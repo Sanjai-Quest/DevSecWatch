@@ -3,9 +3,6 @@ package com.devsecwatch.backend.service;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
-import java.io.IOException;
-import java.util.concurrent.TimeUnit;
-
 @Service
 @Slf4j
 public class GitService {
