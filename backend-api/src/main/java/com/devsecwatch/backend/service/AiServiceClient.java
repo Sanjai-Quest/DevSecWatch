@@ -29,6 +29,13 @@ public class AiServiceClient {
     private final ObjectMapper objectMapper;
 
     public String generateChatResponse(String userMessage, List<ChatMessage> history, ChatContext context) {
+        // Check if AI service is configured (not localhost in production)
+        if (aiServiceUrl.contains("localhost")) {
+            log.warn("AI service not configured (using localhost). Returning placeholder message.");
+            return "AI Assistant is currently unavailable. The AI service needs to be deployed and configured. " +
+                    "For now, please refer to security best practices documentation or consult with your security team.";
+        }
+
         try {
             String systemPrompt = buildSystemPrompt(context);
             List<Map<String, String>> messages = buildMessages(userMessage, history);

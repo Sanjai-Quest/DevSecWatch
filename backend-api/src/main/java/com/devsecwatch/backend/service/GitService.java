@@ -11,31 +11,10 @@ import java.util.concurrent.TimeUnit;
 public class GitService {
 
     public boolean isRepositoryAccessible(String repoUrl) {
-        // Simple check using git ls-remote to verify repo exists and is public
-        // Just checking HEAD is sufficient to validate accessibility
-        ProcessBuilder processBuilder = new ProcessBuilder("git", "ls-remote", repoUrl, "HEAD");
-
-        try {
-            Process process = processBuilder.start();
-            boolean finished = process.waitFor(5, TimeUnit.SECONDS);
-
-            if (!finished) {
-                process.destroy();
-                log.warn("Timed out checking repository accessibility: {}", repoUrl);
-                return false;
-            }
-
-            int exitCode = process.exitValue();
-            if (exitCode != 0) {
-                log.warn("Repository access check failed for {}. Exit code: {}", repoUrl, exitCode);
-                return false;
-            }
-
-            return true;
-        } catch (IOException | InterruptedException e) {
-            log.error("Error checking repository accessibility: {}", e.getMessage());
-            Thread.currentThread().interrupt();
-            return false;
-        }
+        // TODO: Implement using GitHub API instead of git command
+        // For now, skip the check - validation will happen during actual clone in
+        // worker
+        log.info("Skipping pre-check for repository: {}", repoUrl);
+        return true;
     }
 }
