@@ -7,6 +7,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 public class WorkerApplication {
 
     public static void main(String[] args) {
+        System.out.println("DEBUG: RABBITMQ_HOST = " + System.getenv("RABBITMQ_HOST"));
         SpringApplication.run(WorkerApplication.class, args);
     }
 
