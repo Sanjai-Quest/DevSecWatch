@@ -19,6 +19,7 @@ public class RabbitMQConfig {
     public static final String SCANS_EXCHANGE = "scans-exchange";
     public static final String SCAN_JOBS_QUEUE = "scan-jobs";
     public static final String SCAN_NEW_ROUTING_KEY = "scan.new";
+    public static final String FAILED_SCANS_EXCHANGE = "failed-scans-exchange";
 
     @Bean
     public DirectExchange scansExchange() {
@@ -27,7 +28,11 @@ public class RabbitMQConfig {
 
     @Bean
     public Queue scanJobsQueue() {
-        return new Queue(SCAN_JOBS_QUEUE, true);
+        Map<String, Object> args = new HashMap<>();
+        args.put("x-message-ttl", 600000); // 10 minutes
+        args.put("x-max-length", 100);
+        args.put("x-dead-letter-exchange", FAILED_SCANS_EXCHANGE);
+        return new Queue(SCAN_JOBS_QUEUE, true, false, false, args);
     }
 
     @Bean
