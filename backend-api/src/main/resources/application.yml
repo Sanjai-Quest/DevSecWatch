@@ -22,7 +22,8 @@ spring:
     virtual-host: ${RABBITMQ_VHOST:/}
   data:
     redis:
-      url: ${REDIS_URL:redis://127.0.0.1:6379}
+      host: ${SPRING_DATA_REDIS_HOST:127.0.0.1}
+      port: ${SPRING_DATA_REDIS_PORT:6379}
 
 jwt:
   secret: ${JWT_SECRET:verysecretkeythatshouldbechangedinproduction1234567890}
