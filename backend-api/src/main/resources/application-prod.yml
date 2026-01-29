@@ -22,7 +22,9 @@ spring:
     virtual-host: ${RABBITMQ_VHOST:/}
   data:
     redis:
-      url: ${REDIS_URL}
+      # url: ${REDIS_URL}
+      host: ${SPRING_DATA_REDIS_HOST}
+      port: ${SPRING_DATA_REDIS_PORT}
       # If using explicit host/port instead of url
       # host: ${REDIS_HOST}
       # port: ${REDIS_PORT:6379}
