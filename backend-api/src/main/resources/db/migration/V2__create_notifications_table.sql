@@ -1,4 +1,4 @@
-CREATE TABLE notifications (
+CREATE TABLE IF NOT EXISTS notifications (
     id BIGSERIAL PRIMARY KEY,
     user_id VARCHAR(100) NOT NULL,
     title VARCHAR(255) NOT NULL,
