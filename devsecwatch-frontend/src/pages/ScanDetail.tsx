@@ -7,6 +7,7 @@ export default function ScanDetail() {
     const { scanId } = useParams<{ scanId: string }>();
     const { currentScan, fetchScanById, pollScanStatus } = useScanStore();
     const [expandedVuln, setExpandedVuln] = useState<number | null>(null);
+    const [activeTab, setActiveTab] = useState<'ALL' | 'SECRETS' | 'DEPENDENCIES'>('ALL');
 
     useEffect(() => {
         if (scanId) {
@@ -40,6 +41,20 @@ export default function ScanDetail() {
         }
     };
 
+    const isSecret = (v: any) => {
+        if (!v.vulnerabilityType) return false;
+        const t = v.vulnerabilityType.toLowerCase();
+        return t.includes('secret') || t.includes('credential') || t.includes('key');
+    };
+    
+    const isDependency = (v: any) => v.vulnerabilityType === 'VULNERABLE_DEPENDENCY';
+
+    const renderVulns = currentScan?.vulnerabilities?.filter(vuln => {
+        if (activeTab === 'SECRETS') return isSecret(vuln);
+        if (activeTab === 'DEPENDENCIES') return isDependency(vuln);
+        return true;
+    }) || [];
+
     return (
         <Layout>
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -53,7 +68,13 @@ export default function ScanDetail() {
                         <p className="mt-2 text-text-muted font-mono bg-surface inline-block px-2 py-1 rounded border border-border">{currentScan.repoUrl}</p>
                     </div>
                     <div>
-                        <span className="text-sm text-text-muted font-mono">ID: {currentScan.id}</span>
+                        <span className="text-sm text-text-muted font-mono mr-4">ID: {currentScan.id}</span>
+                        <button 
+                            className="bg-primary hover:bg-primary-hover text-white px-4 py-2 rounded font-semibold text-sm transition-colors"
+                            onClick={() => window.open(`${import.meta.env.VITE_API_URL || 'http://localhost:8080'}/api/scans/${currentScan.id}/report`, "_blank")}
+                        >
+                            Download Report
+                        </button>
                     </div>
                 </div>
 
@@ -94,11 +115,31 @@ export default function ScanDetail() {
 
                         {currentScan.vulnerabilities && currentScan.vulnerabilities.length > 0 ? (
                             <div className="card overflow-hidden p-0">
-                                <div className="px-6 py-4 border-b border-border bg-surface/50">
+                                <div className="px-6 py-4 border-b border-border bg-surface/50 flex justify-between items-center">
                                     <h2 className="text-lg font-semibold">Vulnerabilities Found</h2>
+                                    <div className="flex bg-black/20 rounded-lg p-1">
+                                        <button 
+                                            className={`px-4 py-1.5 rounded-md text-sm font-medium transition-colors ${activeTab === 'ALL' ? 'bg-surface text-white shadow-sm' : 'text-text-muted hover:text-white'}`}
+                                            onClick={() => setActiveTab('ALL')}
+                                        >
+                                            All
+                                        </button>
+                                        <button 
+                                            className={`px-4 py-1.5 rounded-md text-sm font-medium transition-colors ${activeTab === 'SECRETS' ? 'bg-surface text-white shadow-sm' : 'text-text-muted hover:text-white'}`}
+                                            onClick={() => setActiveTab('SECRETS')}
+                                        >
+                                            Secrets
+                                        </button>
+                                        <button 
+                                            className={`px-4 py-1.5 rounded-md text-sm font-medium transition-colors ${activeTab === 'DEPENDENCIES' ? 'bg-surface text-white shadow-sm' : 'text-text-muted hover:text-white'}`}
+                                            onClick={() => setActiveTab('DEPENDENCIES')}
+                                        >
+                                            Dependencies
+                                        </button>
+                                    </div>
                                 </div>
                                 <div className="divide-y divide-border">
-                                    {currentScan.vulnerabilities.map((vuln) => (
+                                    {renderVulns.length > 0 ? renderVulns.map((vuln: any) => (
                                         <div key={vuln.id} className="p-6 hover:bg-surface/30 transition-colors">
                                             <div className="flex justify-between items-start mb-4">
                                                 <div className="flex-1">
@@ -110,6 +151,11 @@ export default function ScanDetail() {
                                                     </p>
                                                 </div>
                                                 <div className="flex gap-2">
+                                                    {vuln.cvssScore && (
+                                                        <span className={`px-3 py-1 text-xs font-semibold rounded-full border ${vuln.cvssScore >= 9 ? 'bg-danger/10 text-danger border-danger/20' : vuln.cvssScore >= 7 ? 'bg-warning/10 text-warning border-warning/20' : 'bg-blue-500/10 text-blue-400 border-blue-500/20'}`}>
+                                                            CVSS: {vuln.cvssScore.toFixed(1)}
+                                                        </span>
+                                                    )}
                                                     <span className={`px-3 py-1 text-xs font-semibold rounded-full border ${getSeverityColor(vuln.severity)}`}>
                                                         {vuln.severity}
                                                     </span>
@@ -147,6 +193,14 @@ export default function ScanDetail() {
                                                             </div>
                                                         </div>
                                                     </div>
+                                                    {vuln.nvdDescription && (
+                                                        <div>
+                                                            <p className="text-sm font-medium text-text-muted mb-2 uppercase tracking-wide">NVD Intelligence:</p>
+                                                            <div className="bg-black/30 border border-border p-4 rounded-lg">
+                                                                <p className="text-text-muted leading-relaxed text-sm">{ vuln.nvdDescription }</p>
+                                                            </div>
+                                                        </div>
+                                                    )}
                                                     {vuln.cveId && (
                                                         <p className="text-sm text-text-muted">
                                                             Related CVE: <a href={`https://cve.mitre.org/cgi-bin/cvename.cgi?name=${vuln.cveId}`} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline font-mono">{vuln.cveId}</a>
@@ -155,7 +209,11 @@ export default function ScanDetail() {
                                                 </div>
                                             )}
                                         </div>
-                                    ))}
+                                    )) : (
+                                        <div className="p-8 text-center text-text-muted">
+                                            No vulnerabilities match the selected filter.
+                                        </div>
+                                    )}
                                 </div>
                             </div>
                         ) : (

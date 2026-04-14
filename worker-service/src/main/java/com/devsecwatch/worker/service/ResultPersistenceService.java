@@ -79,6 +79,8 @@ public class ResultPersistenceService {
                 .cveId(truncate(finding.getCveId(), 50))
                 .isTemplateExplanation(explanation.isTemplate())
                 .semgrepRuleId(truncate(finding.getRuleId(), 100))
+                .cvssScore(finding.getCvssScore())
+                .nvdDescription(finding.getNvdDescription())
                 .build();
     }
 

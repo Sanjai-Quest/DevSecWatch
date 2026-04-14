@@ -1,4 +1,11 @@
 spring:
+  security:
+    oauth2:
+      client:
+        registration:
+          github:
+            clientId: ${GITHUB_CLIENT_ID:dummy_id}
+            clientSecret: ${GITHUB_CLIENT_SECRET:dummy_secret}
   application:
     name: devsecwatch-backend
   datasource:

@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
+import { Github } from 'lucide-react';
 import { useAuthStore } from '../store/authStore';
 
 export default function Login() {
@@ -71,6 +72,23 @@ export default function Login() {
                             <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
                         ) : 'Sign in'}
                     </button>
+
+                    <div className="relative">
+                        <div className="absolute inset-0 flex items-center">
+                            <div className="w-full border-t border-border"></div>
+                        </div>
+                        <div className="relative flex justify-center text-sm">
+                            <span className="px-2 bg-surface text-text-muted">Or continue with</span>
+                        </div>
+                    </div>
+
+                    <a 
+                        href="http://localhost:8080/oauth2/authorization/github"
+                        className="w-full flex items-center justify-center gap-2 py-2 px-4 bg-[#24292e] text-white rounded-lg hover:bg-[#2f363d] transition-colors"
+                    >
+                        <Github className="w-5 h-5" />
+                        GitHub
+                    </a>
                 </form>
 
                 <p className="text-center text-sm text-text-muted">

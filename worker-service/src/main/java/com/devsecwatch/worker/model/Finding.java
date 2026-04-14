@@ -16,4 +16,7 @@ public class Finding {
     private String ruleId;
     private double semgrepConfidence;
     private String cveId;
+    private String cweId;
+    private Double cvssScore;
+    private String nvdDescription;
 }

@@ -1,0 +1,86 @@
+name: DevSecWatch Security Scan
+
+on:
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  security-scan:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Trigger DevSecWatch Scan
+        id: trigger_scan
+        env:
+          DEVSECWATCH_API_URL: ${{ secrets.DEVSECWATCH_API_URL }}
+          DEVSECWATCH_TOKEN: ${{ secrets.DEVSECWATCH_TOKEN }}
+          REPO_URL: "https://github.com/${{ github.repository }}"
+        run: |
+          echo "Starting security scan for $REPO_URL..."
+          
+          # 1. Trigger the Scan via API
+          response=$(curl -s -X POST "$DEVSECWATCH_API_URL/api/scans" \
+            -H "Authorization: Bearer $DEVSECWATCH_TOKEN" \
+            -H "Content-Type: application/json" \
+            -d "{\"repoUrl\": \"$REPO_URL\", \"branch\": \"${{ github.head_ref }}\"}")
+          
+          scan_id=$(echo $response | jq -r '.id')
+          if [ "$scan_id" = "null" ] || [ -z "$scan_id" ]; then
+            echo "Failed to start scan. Response: $response"
+            exit 1
+          fi
+          
+          echo "Scan successfully triggered! Scan ID: $scan_id"
+          echo "scan_id=$scan_id" >> $GITHUB_ENV
+          
+      - name: Wait for Scan Completion
+        id: wait_scan
+        env:
+          DEVSECWATCH_API_URL: ${{ secrets.DEVSECWATCH_API_URL }}
+          DEVSECWATCH_TOKEN: ${{ secrets.DEVSECWATCH_TOKEN }}
+        run: |
+          scan_id=${{ env.scan_id }}
+          status="PROCESSING"
+          
+          echo "Waiting for scan to complete..."
+          while [ "$status" = "PROCESSING" ] || [ "$status" = "QUEUED" ]; do
+            sleep 10
+            response=$(curl -s -X GET "$DEVSECWATCH_API_URL/api/scans/$scan_id" \
+              -H "Authorization: Bearer $DEVSECWATCH_TOKEN")
+            status=$(echo $response | jq -r '.status')
+            echo "Current status: $status"
+          done
+          
+          if [ "$status" != "COMPLETED" ]; then
+            echo "Scan failed with status: $status"
+            exit 1
+          fi
+          
+          echo "Scan completed successfully."
+
+      - name: Evaluate Security Scan Results
+        id: eval_results
+        env:
+          DEVSECWATCH_API_URL: ${{ secrets.DEVSECWATCH_API_URL }}
+          DEVSECWATCH_TOKEN: ${{ secrets.DEVSECWATCH_TOKEN }}
+        run: |
+          scan_id=${{ env.scan_id }}
+          
+          # Fetch Vulnerabilities
+          response=$(curl -s -X GET "$DEVSECWATCH_API_URL/api/scans/$scan_id/vulnerabilities" \
+            -H "Authorization: Bearer $DEVSECWATCH_TOKEN")
+            
+          # Extract counts using jq
+          critical=$(echo $response | jq '[.[] | select(.severity == "CRITICAL")] | length')
+          high=$(echo $response | jq '[.[] | select(.severity == "HIGH")] | length')
+          
+          echo "Security Scan Results:"
+          echo "- Critical Vulnerabilities: $critical"
+          echo "- High Vulnerabilities: $high"
+          
+          if [ "$critical" -gt 0 ] || [ "$high" -gt 0 ]; then
+            echo "::error::Security scan failed! Found $critical Critical and $high High vulnerabilities."
+            exit 1
+          else
+            echo "Security scan passed successfully. No critical or high risks detected."
+          fi

@@ -59,6 +59,8 @@ export interface Vulnerability {
     fixSuggestion: string;
     cveId?: string;
     isTemplateExplanation: boolean;
+    cvssScore?: number;
+    nvdDescription?: string;
 }
 
 export interface ScanWithVulnerabilities extends Scan {

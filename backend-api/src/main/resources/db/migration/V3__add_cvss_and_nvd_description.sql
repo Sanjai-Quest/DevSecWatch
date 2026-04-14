@@ -1,0 +1,3 @@
+ALTER TABLE vulnerabilities 
+ADD COLUMN IF NOT EXISTS cvss_score DOUBLE PRECISION,
+ADD COLUMN IF NOT EXISTS nvd_description TEXT;

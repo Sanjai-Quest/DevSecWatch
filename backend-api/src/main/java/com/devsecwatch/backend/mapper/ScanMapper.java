@@ -38,6 +38,8 @@ public class ScanMapper {
                                                                 .fixSuggestion(v.getFixSuggestion())
                                                                 .cveId(v.getCveId())
                                                                 .isTemplateExplanation(v.getIsTemplateExplanation())
+                                                                .cvssScore(v.getCvssScore())
+                                                                .nvdDescription(v.getNvdDescription())
                                                                 .build())
                                                 .collect(Collectors.toList())
                                                 : Collections.emptyList())

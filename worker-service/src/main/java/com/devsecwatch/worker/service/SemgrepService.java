@@ -34,6 +34,8 @@ public class SemgrepService {
         ProcessBuilder processBuilder = new ProcessBuilder(
                 "semgrep",
                 "--config", "auto",
+                "--config", "p/secrets",
+                "--config", "p/trufflehog",
                 "--json",
                 "-o", "semgrep_output.json",
                 ".");
@@ -118,20 +120,29 @@ public class SemgrepService {
 
             if (results.isArray()) {
                 for (JsonNode node : results) {
-                    Severity severity = mapSeverity(node.path("extra").path("severity").asText());
+                    String ruleId = node.path("check_id").asText();
+                    String ruleIdLower = ruleId.toLowerCase();
+                    Severity severity;
+                    
+                    if (ruleIdLower.contains("secret") || ruleIdLower.contains("credential") || ruleIdLower.contains("key")) {
+                        severity = Severity.HIGH;
+                    } else {
+                        severity = mapSeverity(node.path("extra").path("severity").asText());
+                    }
 
                     // Filter: Only keep HIGH and CRITICAL
                     if (severity == Severity.HIGH || severity == Severity.CRITICAL) {
                         Finding finding = Finding.builder()
-                                .ruleId(node.path("check_id").asText())
+                                .ruleId(ruleId)
                                 .filePath(node.path("path").asText())
                                 .lineNumber(node.path("start").path("line").asInt())
                                 .severity(severity)
                                 .description(node.path("extra").path("message").asText())
                                 .codeSnippet(node.path("extra").path("lines").asText()) // Simple extraction
-                                .vulnerabilityType(node.path("check_id").asText()) // Using rule ID as type for now
+                                .vulnerabilityType(ruleId) // Using rule ID as type for now
                                 .semgrepConfidence(0.8) // Placeholder
                                 .cveId(node.path("extra").path("metadata").path("cve").asText(null))
+                                .cweId(extractCwe(node.path("extra").path("metadata").path("cwe")))
                                 .build();
                         findings.add(finding);
                     }
@@ -150,6 +161,12 @@ public class SemgrepService {
                 .totalFindings(findings.size())
                 .executionTimeMs(durationMs)
                 .build();
+    }
+
+    private String extractCwe(JsonNode cweNode) {
+        if (cweNode == null || cweNode.isNull() || cweNode.isMissingNode()) return null;
+        if (cweNode.isArray() && cweNode.size() > 0) return cweNode.get(0).asText();
+        return cweNode.asText();
     }
 
     private Severity mapSeverity(String semgrepSeverity) {

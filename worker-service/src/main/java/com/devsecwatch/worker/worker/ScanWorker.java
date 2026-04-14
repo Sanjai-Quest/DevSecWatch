@@ -13,6 +13,7 @@ import com.devsecwatch.worker.model.enums.ConfidenceLevel;
 import com.devsecwatch.worker.model.enums.ScanStatus;
 import com.devsecwatch.worker.repository.ScanRepository;
 import com.devsecwatch.worker.service.*;
+import com.devsecwatch.worker.model.Finding;
 import com.rabbitmq.client.Channel;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -39,7 +40,9 @@ public class ScanWorker {
     private final GitService gitService;
     private final FileService fileService;
     private final SemgrepService semgrepService;
+    private final DependencyScanner dependencyScanner;
     private final AIEnrichmentService aiEnrichmentService;
+    private final NvdEnrichmentService nvdEnrichmentService;
     private final ResultPersistenceService resultPersistenceService;
     private final WebSocketNotificationService notificationService;
 
@@ -96,6 +99,9 @@ public class ScanWorker {
             scan.setLinesOfCode(loc);
             scanRepository.save(scan);
 
+            // 2.5 Run Dependency Scanner (SCA)
+            List<EnrichedFinding> dependFindings = dependencyScanner.scanDependencies(repoPath);
+
             // 3. Run Semgrep Analysis
             long semgrepStart = System.currentTimeMillis();
             SemgrepResult result = semgrepService.runScan(repoPath);
@@ -105,6 +111,12 @@ public class ScanWorker {
             long aiStart = System.currentTimeMillis();
             List<EnrichedFinding> enrichedFindings = aiEnrichmentService.enrichFindings(result.getFindings());
             aiDuration = System.currentTimeMillis() - aiStart;
+
+            // 4.5. NVD Enrichment
+            enrichedFindings = nvdEnrichmentService.enrichWithNvdInfo(enrichedFindings);
+
+            // 4.6. Merge Dependency Findings (Bypass AI)
+            enrichedFindings.addAll(dependFindings);
 
             // Calculate Metrics
             // Assuming cache hit rate is tracked in AI service logs or we calculate here

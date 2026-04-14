@@ -2,6 +2,7 @@ package com.devsecwatch.backend.controller;
 
 import com.devsecwatch.backend.dto.scan.ScanRequest;
 import com.devsecwatch.backend.dto.scan.ScanResponse;
+import com.devsecwatch.backend.dto.scan.VulnerabilityResponse;
 import com.devsecwatch.backend.service.ScanService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -17,6 +18,7 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
 import java.net.URI;
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/scans")
@@ -46,6 +48,14 @@ public class ScanController {
             @AuthenticationPrincipal UserDetails userDetails) {
 
         return ResponseEntity.ok(scanService.getScanById(id, userDetails.getUsername()));
+    }
+
+    @GetMapping("/{id}/vulnerabilities")
+    public ResponseEntity<List<VulnerabilityResponse>> getVulnerabilitiesByScanId(
+            @PathVariable Long id,
+            @AuthenticationPrincipal UserDetails userDetails) {
+
+        return ResponseEntity.ok(scanService.getVulnerabilitiesByScanId(id, userDetails.getUsername()));
     }
 
     @GetMapping

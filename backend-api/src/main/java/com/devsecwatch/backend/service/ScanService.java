@@ -3,6 +3,7 @@ package com.devsecwatch.backend.service;
 import com.devsecwatch.backend.dto.message.ScanMessage;
 import com.devsecwatch.backend.dto.scan.ScanRequest;
 import com.devsecwatch.backend.dto.scan.ScanResponse;
+import com.devsecwatch.backend.dto.scan.VulnerabilityResponse;
 import com.devsecwatch.backend.exception.*;
 import com.devsecwatch.backend.mapper.ScanMapper;
 import com.devsecwatch.backend.model.Scan;
@@ -18,7 +19,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Service
 @Slf4j
@@ -111,6 +114,22 @@ public class ScanService {
         }
 
         return scanMapper.toResponse(scan);
+    }
+
+    @Transactional(readOnly = true)
+    public List<VulnerabilityResponse> getVulnerabilitiesByScanId(Long scanId, String username) {
+        Scan scan = scanRepository.findById(scanId)
+                .orElseThrow(() -> new ScanNotFoundException("Scan not found with ID: " + scanId));
+
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new UserNotFoundException("User not found: " + username));
+
+        if (!scan.getUser().getId().equals(user.getId())) {
+            throw new UnauthorizedException("Cannot access another user's scan");
+        }
+
+        ScanResponse response = scanMapper.toResponse(scan);
+        return response.getVulnerabilities();
     }
 
     @Transactional(readOnly = true)

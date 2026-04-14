@@ -3,6 +3,7 @@ package com.devsecwatch.backend;
 import com.devsecwatch.backend.model.*;
 import com.devsecwatch.backend.model.enums.*;
 import com.devsecwatch.backend.repository.*;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -34,6 +35,14 @@ class DatabaseSetupTest {
 
     @Autowired
     private ScanMetricsRepository scanMetricsRepository;
+
+    @BeforeEach
+    void setUp() {
+        vulnerabilityRepository.deleteAllInBatch();
+        scanMetricsRepository.deleteAllInBatch();
+        scanRepository.deleteAllInBatch();
+        userRepository.deleteAllInBatch();
+    }
 
     @Test
     void testUserEntityPersistence() {

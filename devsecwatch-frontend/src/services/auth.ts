@@ -21,6 +21,10 @@ export const authService = {
         return data;
     },
 
+    loginWithToken(token: string) {
+        this.setTokens({ accessToken: token, refreshToken: token });
+    },
+
     logout() {
         sessionStorage.clear();
         window.location.href = '/login';
