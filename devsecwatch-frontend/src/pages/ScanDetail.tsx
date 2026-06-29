@@ -42,12 +42,17 @@ export default function ScanDetail() {
     };
 
     const isSecret = (v: any) => {
-        if (!v.vulnerabilityType) return false;
-        const t = v.vulnerabilityType.toLowerCase();
-        return t.includes('secret') || t.includes('credential') || t.includes('key');
+        const typeMatch = (v.vulnerabilityType || '').toLowerCase();
+        const descMatch = (v.description || '').toLowerCase();
+        const terms = ['secret', 'credential', 'key', 'token', 'password'];
+        return terms.some(term => typeMatch.includes(term) || descMatch.includes(term));
     };
     
-    const isDependency = (v: any) => v.vulnerabilityType === 'VULNERABLE_DEPENDENCY';
+    const isDependency = (v: any) => {
+        const typeMatch = (v.vulnerabilityType || '').toLowerCase();
+        const descMatch = (v.description || '').toLowerCase();
+        return typeMatch.includes('dependency') || descMatch.includes('vulnerable dependency');
+    };
 
     const renderVulns = currentScan?.vulnerabilities?.filter(vuln => {
         if (activeTab === 'SECRETS') return isSecret(vuln);
