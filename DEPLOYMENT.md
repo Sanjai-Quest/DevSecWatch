@@ -253,3 +253,109 @@ After deploying, update your GitHub OAuth App's callback URL:
 ### AI Service returns template explanations only
 - Check `GROQ_API_KEY` is set correctly on the AI Service deployment
 - Visit `https://your-ai-service.up.railway.app/health` — `llm_service` should be `"groq"` not `"template_only"`
+
+---
+
+## 💸 Completely Free Deployment Strategy
+
+If you want to deploy the entire DevSecWatch stack (Frontend, Backend, Worker, AI, Postgres, Redis, RabbitMQ) completely for free without trial credits, use the **Oracle Cloud Infrastructure (OCI) Always Free Tier**.
+
+OCI offers up to **4 ARM Ampere A1 Compute instances with 24GB of RAM** completely free forever. This is more than enough to run the entire `docker-compose.full.yml` stack on a single server.
+
+### 1. Provision an Oracle Cloud VM
+1. Sign up for [Oracle Cloud Free Tier](https://www.oracle.com/cloud/free/).
+2. Create a Compute Instance:
+   - **Shape**: `VM.Standard.A1.Flex` (ARM-based)
+   - **OCPUs**: 2 to 4
+   - **Memory**: 12GB to 24GB
+   - **Image**: Ubuntu 22.04 or 24.04
+   - **Boot Volume**: up to 200GB (Always Free)
+3. Download the SSH keys.
+4. Update Security Lists (Firewall) in Oracle Cloud Dashboard to allow ingress on ports `80`, `443`, `8080`, `8081`, `8000`, `15672` (or whichever ones you wish to expose publicly).
+
+### 2. Connect and Install Docker
+SSH into your instance:
+```bash
+ssh -i <your-key.pem> ubuntu@<instance-public-ip>
+```
+
+Install Docker and Docker Compose:
+```bash
+sudo apt update
+sudo apt install -y docker.io docker-compose-v2
+sudo systemctl enable --now docker
+sudo usermod -aG docker $USER
+newgrp docker
+```
+
+### 3. Deploy DevSecWatch
+Clone your repository onto the VM:
+```bash
+git clone <your-repo-url> devsecwatch
+cd devsecwatch
+```
+
+Configure environment variables:
+```bash
+# Add your GROQ API key
+cp ai-service/.env.example ai-service/.env
+nano ai-service/.env
+```
+
+Start the entire stack using Docker Compose:
+```bash
+# Start all infrastructure and services in the background
+docker compose -f docker-compose.full.yml up -d --build
+```
+
+### 4. Deploy Frontend (Vercel)
+For the frontend, it's best to continue using **Vercel** (which is 100% free for frontend hosting):
+1. Import your repo to Vercel.
+2. Set **Root Directory** to `devsecwatch-frontend`.
+3. Set the Environment Variable `VITE_API_URL` to your Oracle VM's public IP: `http://<your-vm-ip>:8080`.
+4. Deploy!
+
+### 5. Final Setup
+- In your Oracle VM's `docker-compose.full.yml`, ensure the `backend-api` has `FRONTEND_URL` set to your Vercel URL.
+- Update GitHub OAuth settings with `http://<your-vm-ip>:8080/login/oauth2/code/github`.
+- **Note:** For production use, you should set up a Reverse Proxy (like Caddy or Nginx Proxy Manager) on the Oracle VM to enable HTTPS (SSL) for your APIs, as GitHub OAuth generally requires HTTPS callbacks. Caddy is excellent for automatic free SSL via Let's Encrypt.
+
+---
+
+## ☁️ Alternative: Managed PaaS Free Tier (No Virtual Machine)
+
+If you strictly do not want to manage a Virtual Machine and want to deploy everything using purely managed Platform-as-a-Service (PaaS) providers for free, you will need to piece together multiple services.
+
+> ⚠️ **Warning:** Free tiers on PaaS providers (like Koyeb or Render) typically limit you to **512MB of RAM**. Java Spring Boot applications and Python AI models consume a lot of memory and may crash frequently if they exceed these limits.
+
+### 1. Database (PostgreSQL)
+Use **Supabase** or **Neon**:
+1. Create a free account and start a new project.
+2. Get the JDBC connection string (`DATABASE_URL`).
+3. Note the DB username and password.
+
+### 2. Cache (Redis)
+Use **Upstash**:
+1. Create a free Upstash Redis database.
+2. Get the `SPRING_DATA_REDIS_HOST`, `SPRING_DATA_REDIS_PORT`, and password.
+
+### 3. Message Broker (RabbitMQ)
+Use **CloudAMQP**:
+1. Create a free "Little Lemur" instance.
+2. Extract the `RABBITMQ_HOST`, port, username, password, and vhost.
+
+### 4. Backend Services (Koyeb or Render)
+You can deploy your 3 backend services (API, Worker, AI) to **Koyeb** (offers 1 free service) and **Render** (offers free web services, though they spin down after inactivity). You may need to spread the 3 services across different providers or multiple accounts to stay on the free tiers.
+1. Connect your GitHub repository.
+2. Set the root directory to `backend-api` (or `worker-service` / `ai-service`).
+3. Input all the environment variables collected from steps 1-3.
+4. For the Worker, be aware that Railway/Render free tiers might struggle with installing `semgrep` on low RAM.
+
+### 5. Frontend (Vercel)
+Use **Vercel** as usual:
+1. Import the repository and set the root to `devsecwatch-frontend`.
+2. Set `VITE_API_URL` to your deployed Backend API URL (e.g., `https://my-backend.koyeb.app`).
+
+### Summary of this approach:
+- **Pros:** No server to manage, automatic SSL certificates (HTTPS), auto-deploy on git push.
+- **Cons:** Very fragmented, low memory limits (512MB) causing potential out-of-memory crashes, backend services sleep after inactivity, more complex to set up.

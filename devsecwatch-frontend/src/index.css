@@ -4,51 +4,39 @@
 
 @layer base {
     :root {
-        --color-background: 255 255 255;
-        --color-surface: 249 250 251;
-        --color-primary: 99 102 241;
-        /* Indigo 500 */
-        --color-primary-hover: 79 70 229;
-        /* Indigo 600 */
-        --color-secondary: 236 72 153;
-        /* Pink 500 */
-        --color-success: 16 185 129;
-        /* Emerald 500 */
-        --color-warning: 245 158 11;
-        /* Amber 500 */
-        --color-danger: 239 68 68;
-        /* Red 500 */
-        --color-text: 17 24 39;
-        /* Gray 900 */
-        --color-text-muted: 107 114 128;
-        /* Gray 500 */
-        --color-border: 229 231 235;
-        /* Gray 200 */
+        --color-background: 253 251 247; /* #FDFBF7 Ivory */
+        --color-surface: 245 240 230; /* #F5F0E6 Cream Surface */
+        --color-cards: 255 255 255; /* #FFFFFF White */
+        --color-navbar: 30 15 45; /* #1E0F2D Deep Royal Purple */
+        --color-sidebar: 43 21 64; /* #2B1540 Lighter Royal Purple */
+        --color-primary: 212 175 55; /* #D4AF37 Rich Gold */
+        --color-primary-hover: 184 153 48; /* #B89930 Darker Gold */
+        --color-secondary: 72 61 139; /* #483D8B Dark Slate Blue */
+        --color-accent: 212 175 55; /* #D4AF37 Rich Gold */
+        --color-success: 16 185 129; /* #10B981 */
+        --color-warning: 245 158 11; /* #F59E0B */
+        --color-danger: 220 38 38; /* #DC2626 */
+        --color-text: 40 30 50; /* #281E32 Dark Purple Charcoal */
+        --color-text-muted: 110 95 120; /* #6E5F78 Muted Purple-Grey */
+        --color-border: 220 205 180; /* #DCCDB4 Light Gold/Champagne */
     }
 
     .dark {
-        --color-background: 9 9 11;
-        /* Zinc 950 */
-        --color-surface: 24 24 27;
-        /* Zinc 900 */
-        --color-primary: 99 102 241;
-        /* Indigo 500 */
-        --color-primary-hover: 79 70 229;
-        /* Indigo 600 */
-        --color-secondary: 236 72 153;
-        /* Pink 500 */
-        --color-success: 16 185 129;
-        /* Emerald 500 */
-        --color-warning: 245 158 11;
-        /* Amber 500 */
-        --color-danger: 239 68 68;
-        /* Red 500 */
-        --color-text: 244 244 245;
-        /* Zinc 100 */
-        --color-text-muted: 161 161 170;
-        /* Zinc 400 */
-        --color-border: 63 63 70;
-        /* Zinc 700 */
+        --color-background: 15 9 20; /* #0F0914 Deep Midnight Purple (Almost Black) */
+        --color-surface: 28 18 40; /* #1C1228 Deep Royal Violet */
+        --color-cards: 35 23 50; /* #231732 Slightly lighter violet for cards */
+        --color-navbar: 15 9 20; /* #0F0914 Midnight Purple */
+        --color-sidebar: 20 12 28; /* #140C1C Very dark violet */
+        --color-primary: 212 175 55; /* #D4AF37 Rich Gold */
+        --color-primary-hover: 241 229 172; /* #F1E5AC Brighter Luminous Gold */
+        --color-secondary: 72 61 139; /* #483D8B Indigo */
+        --color-accent: 212 175 55; /* #D4AF37 Gold */
+        --color-success: 16 185 129; /* #10B981 */
+        --color-warning: 245 158 11; /* #F59E0B */
+        --color-danger: 220 38 38; /* #DC2626 */
+        --color-text: 253 251 247; /* #FDFBF7 Champagne White */
+        --color-text-muted: 169 169 169; /* #A9A9A9 Silver */
+        --color-border: 65 45 90; /* #412D5A Deep Indigo Border */
     }
 
     body {
