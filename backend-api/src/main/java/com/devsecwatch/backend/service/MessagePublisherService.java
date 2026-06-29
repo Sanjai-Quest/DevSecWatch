@@ -11,6 +11,7 @@ import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 import java.util.UUID;
+import org.springframework.web.client.RestTemplate;
 
 @Service
 @Slf4j
@@ -42,8 +43,14 @@ public class MessagePublisherService {
             });
             log.info("Successfully published scan job for scan ID: {}", message.getScanId());
         } catch (AmqpException e) {
-            log.error("Failed to publish scan job: {}", e.getMessage(), e);
-            throw new MessagePublishException("Failed to publish scan job", e);
+            log.warn("Failed to publish scan job via RabbitMQ, falling back to HTTP: {}", e.getMessage());
+            try {
+                new RestTemplate().postForEntity("http://localhost:8081/api/internal/scan", message, Void.class);
+                log.info("Successfully published scan job via HTTP for scan ID: {}", message.getScanId());
+            } catch(Exception httpEx) {
+                log.error("Failed to publish scan job via HTTP: {}", httpEx.getMessage());
+                throw new MessagePublishException("Failed to publish scan job", e);
+            }
         }
     }
 

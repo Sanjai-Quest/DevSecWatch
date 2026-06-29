@@ -4,6 +4,7 @@ import com.devsecwatch.worker.dto.notification.ScanNotification;
 import com.devsecwatch.worker.model.Scan;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.web.client.RestTemplate;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -71,7 +72,16 @@ public class WebSocketNotificationService {
                 .userId(username)
                 .build();
 
-        rabbitTemplate.convertAndSend(notificationQueue, notification);
+        try {
+            rabbitTemplate.convertAndSend(notificationQueue, notification);
+        } catch (Exception e) {
+            log.warn("Failed to publish notification to RabbitMQ, falling back to HTTP: {}", e.getMessage());
+            try {
+                new RestTemplate().postForEntity("http://localhost:8080/api/internal/notification", notification, Void.class);
+            } catch (Exception ex) {
+                log.error("Failed to push notification to backend via HTTP: {}", ex.getMessage());
+            }
+        }
         log.info("Notification event published for scan {} for user {}", scan.getId(), username);
     }
 

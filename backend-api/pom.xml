@@ -108,7 +108,12 @@
 			<artifactId>bucket4j-redis</artifactId>
 			<version>8.10.1</version>
 		</dependency>
-	</dependencies>
+	    <dependency>
+            <groupId>com.h2database</groupId>
+            <artifactId>h2</artifactId>
+            <scope>runtime</scope>
+        </dependency>
+    </dependencies>
 
 	<build>
 		<plugins>
@@ -128,3 +133,4 @@
 	</build>
 
 </project>
+

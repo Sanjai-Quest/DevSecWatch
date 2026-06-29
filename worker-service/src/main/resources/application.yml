@@ -4,7 +4,7 @@ spring:
 #  main:
 #    web-application-type: none
   datasource:
-    url: ${DATABASE_URL:jdbc:postgresql://127.0.0.1:5433/devsecwatch}
+    url: ${DATABASE_URL:jdbc:postgresql://127.0.0.1:5432/devsecwatch}
     username: ${DATABASE_USERNAME:postgres}
     password: ${DATABASE_PASSWORD:postgres}
     driver-class-name: org.postgresql.Driver

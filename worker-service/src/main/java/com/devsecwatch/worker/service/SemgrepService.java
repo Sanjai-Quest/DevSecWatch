@@ -47,20 +47,33 @@ public class SemgrepService {
             log.warn("Could not copy custom semgrep rules: {}", e.getMessage());
         }
 
-        List<String> cmd = new ArrayList<>(java.util.Arrays.asList(
-                "docker", "run", "--name", containerName, "--rm", "--read-only", "--tmpfs", "/tmp",
-                "--memory=512m", "--cpus=0.5", "--network=none", 
-                "--pids-limit=50", "--cap-drop=ALL", "--security-opt=no-new-privileges", "--user=1000:1000",
-                "-v", repoPath.toAbsolutePath().toString() + ":/src:ro",
-                "--workdir", "/src",
-                "returntocorp/semgrep:latest",
-                "semgrep", "scan", "--json", "--config=auto"
-        ));
-
-        if (customRulesPath.toFile().exists()) {
-            cmd.add("--config=/src/.devsecwatch_secrets.yml");
+        boolean useDocker = System.getenv("USE_DOCKER_SEMGREP") != null && System.getenv("USE_DOCKER_SEMGREP").equals("true");
+        List<String> cmd = new ArrayList<>();
+        
+        if (useDocker) {
+            cmd.addAll(java.util.Arrays.asList(
+                    "docker", "run", "--name", containerName, "--rm", "--read-only", "--tmpfs", "/tmp",
+                    "--memory=512m", "--cpus=0.5", "--network=none", 
+                    "--pids-limit=50", "--cap-drop=ALL", "--security-opt=no-new-privileges", "--user=1000:1000",
+                    "-v", repoPath.toAbsolutePath().toString() + ":/src:ro",
+                    "--workdir", "/src",
+                    "returntocorp/semgrep:latest",
+                    "semgrep", "scan", "--json", "--config=auto"
+            ));
+            if (customRulesPath.toFile().exists()) {
+                cmd.add("--config=/src/.devsecwatch_secrets.yml");
+            }
+            cmd.add("/src");
+        } else {
+            // Native semgrep execution
+            cmd.addAll(java.util.Arrays.asList(
+                "semgrep", "scan", "--json", "--config=auto", "--quiet"
+            ));
+            if (customRulesPath.toFile().exists()) {
+                cmd.add("--config=" + customRulesPath.toAbsolutePath().toString());
+            }
+            cmd.add(repoPath.toAbsolutePath().toString());
         }
-        cmd.add("/src");
 
         ProcessBuilder processBuilder = createProcessBuilder(cmd);
         processBuilder.redirectErrorStream(false);
@@ -96,7 +109,7 @@ public class SemgrepService {
                 throw new OutOfMemoryException("Repository scan breached 512MB limit.");
             }
             if (exitCode != 0 && exitCode != 1) {
-                throw new ScanExecutionException("Docker Semgrep failed with exit code: " + exitCode);
+                throw new ScanExecutionException("Semgrep failed with exit code: " + exitCode);
             }
 
             String jsonOutput = stdoutFuture.join();
@@ -108,7 +121,7 @@ public class SemgrepService {
 
         } catch (IOException | InterruptedException e) {
             if (e instanceof InterruptedException) Thread.currentThread().interrupt();
-            throw new ScanExecutionException("Docker Semgrep execution error: " + e.getMessage(), e);
+            throw new ScanExecutionException("Semgrep execution error: " + e.getMessage(), e);
         } catch (java.util.concurrent.CompletionException e) {
             throw new ScanExecutionException("Error reading Semgrep stdout", e.getCause());
         } finally {

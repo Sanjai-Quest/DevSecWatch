@@ -170,6 +170,7 @@ public class ScanWorker {
             } else {
                 String errorMsg = e.getMessage() != null ? e.getMessage() : "Unknown internal error during scan";
                 log.error("Scan failed for ID {}: {}", scanId, errorMsg, e);
+                scan.setErrorMessage(errorMsg);
                 updateScanStatus(scan, ScanStatus.FAILED);
                 notificationService.notifyScanUpdate(scan, "Scan failed: " + errorMsg);
             }
