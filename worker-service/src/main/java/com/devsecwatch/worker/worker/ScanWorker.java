@@ -126,6 +126,11 @@ public class ScanWorker {
                     .collect(Collectors.toList());
 
             List<Vulnerability> allVuls = new ArrayList<>(semgrepVulnerabilities);
+            
+            // Set scan property on dependency vulnerabilities
+            for (Vulnerability v : depVulnerabilities) {
+                v.setScan(scan);
+            }
             allVuls.addAll(depVulnerabilities);
 
             // Update NVD Description if available from Semgrep
