@@ -90,7 +90,7 @@ public class ScanWorker {
         }
 
         try {
-            updateScanStatus(scan, ScanStatus.IN_PROGRESS);
+            updateScanStatus(scan, ScanStatus.PROCESSING);
             notificationService.notifyScanUpdate(scan, "Scan started...");
 
             Path repoPath = gitService.cloneRepository(message.getRepoUrl(), message.getBranch(), scanId);
