@@ -35,6 +35,63 @@ export default function Dashboard() {
                     <p className="mt-2 text-text-muted text-lg">Manage and monitor your repository security scans.</p>
                 </div>
 
+                {/* Security Posture Summary */}
+                {!isLoading && scans.length > 0 && (
+                    <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
+                        <div className="md:col-span-1 card bg-surface/40 border-border/50 flex flex-col items-center justify-center py-6">
+                            <span className="text-sm font-medium text-text-muted uppercase tracking-wider mb-2">Security Score</span>
+                            {(() => {
+                                const totalScans = scans.filter(s => s.status === 'COMPLETED');
+                                if (totalScans.length === 0) return <span className="text-2xl font-bold text-text-muted">N/A</span>;
+                                
+                                const totalCritical = totalScans.reduce((acc, s) => acc + (s.criticalCount || 0), 0);
+                                const totalHigh = totalScans.reduce((acc, s) => acc + (s.highCount || 0), 0);
+                                const totalMedium = totalScans.reduce((acc, s) => acc + (s.mediumCount || 0), 0);
+                                const totalLow = totalScans.reduce((acc, s) => acc + (s.lowCount || 0), 0);
+                                
+                                const score = Math.max(0, 100 - (totalCritical * 10) - (totalHigh * 5) - (totalMedium * 2) - (totalLow * 1));
+                                
+                                let colorClass = "text-success";
+                                if (score < 70) colorClass = "text-danger";
+                                else if (score < 90) colorClass = "text-warning";
+                                
+                                return (
+                                    <div className="relative flex items-center justify-center">
+                                        <span className={`text-5xl font-black ${colorClass}`}>{score}</span>
+                                        <span className="text-xs text-text-muted ml-1 font-bold">/100</span>
+                                    </div>
+                                );
+                            })()}
+                        </div>
+                        <div className="md:col-span-3 card bg-surface/40 border-border/50 p-6 flex flex-col justify-center">
+                            <div className="flex items-center gap-4">
+                                <div className="flex-1">
+                                    <h4 className="text-sm font-semibold text-text uppercase tracking-tight mb-3">Overall Risk Profile</h4>
+                                    <div className="flex gap-4">
+                                        <div className="flex items-center gap-2">
+                                            <div className="w-3 h-3 rounded-full bg-danger"></div>
+                                            <span className="text-sm text-text-muted"><span className="font-bold text-text">{scans.reduce((acc, s) => acc + (s.criticalCount || 0), 0)}</span> Critical</span>
+                                        </div>
+                                        <div className="flex items-center gap-2">
+                                            <div className="w-3 h-3 rounded-full bg-warning"></div>
+                                            <span className="text-sm text-text-muted"><span className="font-bold text-text">{scans.reduce((acc, s) => acc + (s.highCount || 0), 0)}</span> High</span>
+                                        </div>
+                                        <div className="flex items-center gap-2">
+                                            <div className="w-3 h-3 rounded-full bg-blue-500"></div>
+                                            <span className="text-sm text-text-muted"><span className="font-bold text-text">{scans.reduce((acc, s) => acc + (s.mediumCount || 0), 0)}</span> Medium</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div className="text-right">
+                                    <Link to="/scan/new" className="btn-primary py-2 px-6 rounded-lg text-sm font-bold shadow-lg shadow-primary/20 transition-all hover:scale-105 active:scale-95">
+                                        Run New Scan
+                                    </Link>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
                 {/* Content */}
                 {isLoading && scans.length === 0 ? (
                     <div className="flex justify-center py-20">

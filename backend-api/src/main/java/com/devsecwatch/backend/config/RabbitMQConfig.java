@@ -17,6 +17,13 @@ public class RabbitMQConfig {
     public static final String SCANS_EXCHANGE = "scans-exchange";
     public static final String SCAN_JOBS_QUEUE = "scan-jobs";
     public static final String SCAN_NEW_ROUTING_KEY = "scan.new";
+    public static final String AI_ENRICHMENT_ROUTING_KEY = "ai.enrich";
+    public static final String SCAN_CANCELLATION_EXCHANGE = "scan-cancellation-exchange";
+
+    @Bean
+    public FanoutExchange cancellationExchange() {
+        return new FanoutExchange(SCAN_CANCELLATION_EXCHANGE, true, false);
+    }
 
     public static final String FAILED_SCANS_EXCHANGE = "failed-scans-exchange";
     public static final String FAILED_SCANS_QUEUE = "failed-scans";

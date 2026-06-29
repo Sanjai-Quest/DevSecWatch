@@ -6,9 +6,9 @@ import com.devsecwatch.worker.exception.AIServiceException;
 import com.devsecwatch.worker.model.EnrichedFinding;
 import com.devsecwatch.worker.model.Finding;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.codec.digest.DigestUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 
@@ -18,9 +18,9 @@ import java.util.List;
 import java.util.Map;
 
 @Service
-@Slf4j
-@RequiredArgsConstructor
 public class AIEnrichmentService {
+
+    private static final Logger log = LoggerFactory.getLogger(AIEnrichmentService.class);
 
     private final AIServiceClient aiClient;
     private final RedisTemplate<String, Object> redisTemplate;
@@ -39,6 +39,11 @@ public class AIEnrichmentService {
                     .fixSuggestion("Review code manually using OWASP guidelines.")
                     .confidence("TEMPLATE")
                     .isTemplate(true).build());
+
+    public AIEnrichmentService(AIServiceClient aiClient, RedisTemplate<String, Object> redisTemplate) {
+        this.aiClient = aiClient;
+        this.redisTemplate = redisTemplate;
+    }
 
     public List<EnrichedFinding> enrichFindings(List<Finding> findings) {
         List<EnrichedFinding> result = new ArrayList<>();

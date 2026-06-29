@@ -1,7 +1,8 @@
 package com.devsecwatch.worker.service;
 
 import com.devsecwatch.worker.exception.NoFilesFoundException;
-import lombok.extern.slf4j.Slf4j;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 import java.io.IOException;
@@ -13,8 +14,9 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 @Service
-@Slf4j
 public class FileService {
+
+    private static final Logger log = LoggerFactory.getLogger(FileService.class);
 
     public List<Path> extractJavaFiles(Path repoRoot) {
         try (Stream<Path> walk = Files.walk(repoRoot, Integer.MAX_VALUE)) {

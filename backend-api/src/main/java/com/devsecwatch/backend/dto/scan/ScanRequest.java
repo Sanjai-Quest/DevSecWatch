@@ -1,7 +1,7 @@
 package com.devsecwatch.backend.dto.scan;
 
 import com.devsecwatch.backend.validation.BranchName;
-import com.devsecwatch.backend.validation.GitHubUrl;
+import com.devsecwatch.backend.validation.ValidRepoUrl;
 import jakarta.validation.constraints.NotBlank;
 import lombok.Data;
 
@@ -9,7 +9,7 @@ import lombok.Data;
 public class ScanRequest {
 
     @NotBlank(message = "Repository URL is required")
-    @GitHubUrl
+    @ValidRepoUrl
     private String repoUrl;
 
     @BranchName

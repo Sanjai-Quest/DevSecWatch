@@ -8,8 +8,8 @@ def test_osv_api():
     payload = {
         "queries": [
             {
-                "package": {"name": "react", "ecosystem": "npm"},
-                "version": "15.0.0"
+                "package": {"name": "org.apache.logging.log4j:log4j-core", "ecosystem": "Maven"},
+                "version": "2.14.1"
             }
         ]
     }

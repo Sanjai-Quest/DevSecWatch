@@ -40,6 +40,7 @@ public class ScanMapper {
                                                                 .isTemplateExplanation(v.getIsTemplateExplanation())
                                                                 .cvssScore(v.getCvssScore())
                                                                 .nvdDescription(v.getNvdDescription())
+                                                                .aiStatus(v.getAiStatus())
                                                                 .build())
                                                 .collect(Collectors.toList())
                                                 : Collections.emptyList())

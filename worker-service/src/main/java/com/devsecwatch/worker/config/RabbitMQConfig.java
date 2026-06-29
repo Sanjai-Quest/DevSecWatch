@@ -20,10 +20,35 @@ public class RabbitMQConfig {
     public static final String SCAN_JOBS_QUEUE = "scan-jobs";
     public static final String SCAN_NEW_ROUTING_KEY = "scan.new";
     public static final String FAILED_SCANS_EXCHANGE = "failed-scans-exchange";
+    public static final String AI_ENRICHMENT_EXCHANGE = "ai-enrichment-exchange";
+    public static final String AI_ENRICHMENT_QUEUE = "ai-enrichment-jobs";
+    public static final String AI_ENRICHMENT_ROUTING_KEY = "ai.enrich";
+    public static final String SCAN_CANCELLATION_EXCHANGE = "scan-cancellation-exchange";
+
+    @Bean
+    public FanoutExchange cancellationExchange() {
+        return new FanoutExchange(SCAN_CANCELLATION_EXCHANGE, true, false);
+    }
+
+    @Bean
+    public Queue cancellationQueue() {
+        // Unique queue for each worker instance to receive fanout broadcast
+        return new AnonymousQueue();
+    }
+
+    @Bean
+    public Binding cancellationBinding(Queue cancellationQueue, FanoutExchange cancellationExchange) {
+        return BindingBuilder.bind(cancellationQueue).to(cancellationExchange);
+    }
 
     @Bean
     public DirectExchange scansExchange() {
         return new DirectExchange(SCANS_EXCHANGE, true, false);
+    }
+
+    @Bean
+    public DirectExchange aiExchange() {
+        return new DirectExchange(AI_ENRICHMENT_EXCHANGE, true, false);
     }
 
     @Bean
@@ -36,8 +61,33 @@ public class RabbitMQConfig {
     }
 
     @Bean
+    public FanoutExchange failedScansExchange() {
+        return new FanoutExchange(FAILED_SCANS_EXCHANGE, true, false);
+    }
+
+    @Bean
+    public Queue deadLetterQueue() {
+        return new Queue("scan-jobs-dlq", true);
+    }
+
+    @Bean
+    public Binding deadLetterBinding() {
+        return BindingBuilder.bind(deadLetterQueue()).to(failedScansExchange());
+    }
+
+    @Bean
+    public Queue aiEnrichmentQueue() {
+        return new Queue(AI_ENRICHMENT_QUEUE, true);
+    }
+
+    @Bean
     public Binding scanBinding() {
         return BindingBuilder.bind(scanJobsQueue()).to(scansExchange()).with(SCAN_NEW_ROUTING_KEY);
+    }
+
+    @Bean
+    public Binding aiBinding() {
+        return BindingBuilder.bind(aiEnrichmentQueue()).to(aiExchange()).with(AI_ENRICHMENT_ROUTING_KEY);
     }
 
     @Bean
@@ -60,6 +110,7 @@ public class RabbitMQConfig {
         org.springframework.amqp.rabbit.config.SimpleRabbitListenerContainerFactory factory = new org.springframework.amqp.rabbit.config.SimpleRabbitListenerContainerFactory();
         factory.setConnectionFactory(connectionFactory);
         factory.setMessageConverter(jsonMessageConverter());
+        factory.setDefaultRequeueRejected(false);
         return factory;
     }
 }

@@ -85,6 +85,13 @@ public class AuthService {
             throw new TokenExpiredException("Invalid refresh token");
         }
 
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new InvalidCredentialsException("User not found or account deactivated"));
+
+        if (!user.getIsActive()) {
+            throw new InvalidCredentialsException("Account is deactivated");
+        }
+
         String accessToken = jwtService.generateAccessToken(username);
 
         return AuthResponse.builder()

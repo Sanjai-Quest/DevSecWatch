@@ -1,36 +1,44 @@
 package com.devsecwatch.backend.service;
 
+import io.github.bucket4j.Bandwidth;
+import io.github.bucket4j.Bucket;
+import io.github.bucket4j.BucketConfiguration;
+import io.github.bucket4j.distributed.proxy.ProxyManager;
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
-import java.util.concurrent.TimeUnit;
+import java.time.Duration;
+import java.util.function.Supplier;
 
 @Service
 @RequiredArgsConstructor
 public class RateLimiterService {
 
-    private final StringRedisTemplate redisTemplate;
-    private static final int MAX_REQUESTS_PER_MINUTE = 100;
-    private static final DateTimeFormatter FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd-HH:mm");
+    private final ProxyManager<byte[]> proxyManager;
+    private final com.devsecwatch.backend.repository.UserRepository userRepository;
 
-    public boolean allowRequest(String userId) {
-        String key = "rate_limit:" + userId + ":" + LocalDateTime.now().format(FORMATTER);
-        Long count = redisTemplate.opsForValue().increment(key);
+    private static final String SCAN_RATE_LIMIT_PREFIX = "rate_limit:scans:";
 
-        if (count != null && count == 1) {
-            redisTemplate.expire(key, 60, TimeUnit.SECONDS);
-        }
-
-        return count != null && count <= MAX_REQUESTS_PER_MINUTE;
+    public boolean allowRequest(String username) {
+        return userRepository.findByUsername(username)
+                .map(user -> resolveBucket(user.getId()).tryConsume(1))
+                .orElse(true);
     }
 
-    public int getRemainingAttempts(String userId) {
-        String key = "rate_limit:" + userId + ":" + LocalDateTime.now().format(FORMATTER);
-        String countStr = redisTemplate.opsForValue().get(key);
-        int count = countStr != null ? Integer.parseInt(countStr) : 0;
-        return Math.max(0, MAX_REQUESTS_PER_MINUTE - count);
+    public io.github.bucket4j.ConsumptionProbe tryConsumeAndReturnProbe(String username) {
+        return userRepository.findByUsername(username)
+                .map(user -> resolveBucket(user.getId()).tryConsumeAndReturnRemaining(1))
+                .orElse(null);
+    }
+
+    private Bucket resolveBucket(Long userId) {
+        String key = SCAN_RATE_LIMIT_PREFIX + userId;
+        Supplier<BucketConfiguration> configSupplier = () -> BucketConfiguration.builder()
+                .addLimit(Bandwidth.builder()
+                        .capacity(5)
+                        .refillIntervally(5, Duration.ofMinutes(10))
+                        .build())
+                .build();
+        return proxyManager.builder().build(key.getBytes(), configSupplier);
     }
 }

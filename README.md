@@ -1,637 +1,1509 @@
+<div align="center">
+
 # 🛡️ DevSecWatch
+**AI-Powered, Enterprise-Grade Security Vulnerability Scanner**
 
-> **AI-Powered Security Vulnerability Scanner for Modern Development Teams**
+[![React](https://img.shields.io/badge/React-18-blue.svg)](https://reactjs.org/)
+[![Spring Boot](https://img.shields.io/badge/Spring_Boot-3.2.1-brightgreen.svg)](https://spring.io/projects/spring-boot)
+[![FastAPI](https://img.shields.io/badge/FastAPI-Python_3.11-teal.svg)](https://fastapi.tiangolo.com/)
+[![RabbitMQ](https://img.shields.io/badge/RabbitMQ-Message_Queue-orange.svg)](https://www.rabbitmq.com/)
+[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-15-336791.svg)](https://www.postgresql.org/)
+[![Redis](https://img.shields.io/badge/Redis-7-DC382D.svg)](https://redis.io/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-DevSecWatch is an enterprise-grade, automated security scanning platform that analyzes GitHub repositories for vulnerabilities and provides AI-powered remediation guidance. Built with a modern microservices architecture, it combines static code analysis with advanced AI to help development teams identify, understand, and fix security issues before they reach production.
+> **DevSecWatch analyzes GitHub repositories for vulnerabilities, automates static code analysis, and leverages Large Language Models (LLMs) to provide real-time, context-aware remediation guidance.**
 
-[![Java](https://img.shields.io/badge/Java-21-orange.svg)](https://openjdk.java.net/)
-[![Spring Boot](https://img.shields.io/badge/Spring%20Boot-3.2.1-brightgreen.svg)](https://spring.io/projects/spring-boot)
-[![React](https://img.shields.io/badge/React-18.2-blue.svg)](https://reactjs.org/)
-[![Python](https://img.shields.io/badge/Python-3.11-blue.svg)](https://www.python.org/)
-[![License](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
-
----
-
-## 📋 Table of Contents
-
-- [Overview](#-overview)
-- [Key Features](#-key-features)
-- [Architecture](#-architecture)
-- [Technology Stack](#-technology-stack)
-- [Core Capabilities](#-core-capabilities)
-- [System Components](#-system-components)
-- [Getting Started](#-getting-started)
-- [Deployment](#-deployment)
-- [Screenshots](#-screenshots)
-- [Project Highlights](#-project-highlights)
-- [Future Roadmap](#-future-roadmap)
-- [Contributing](#-contributing)
-- [License](#-license)
+</div>
 
 ---
 
-## 🎯 Overview
+## 📖 Table of Contents
+- [🎯 Project Overview](#-project-overview)
+- [✨ Key Features & Capabilities](#-key-features--capabilities)
+- [🏗️ System Architecture](#️-system-architecture)
+- [🔄 Detailed Data Flow](#-detailed-data-flow)
+- [🛠️ Technology Stack](#️-technology-stack)
+- [📂 Complete Repository Structure](#-complete-repository-structure)
+- [🚀 Getting Started (Local Setup)](#-getting-started-local-setup)
+- [🔌 API Documentation](#-api-documentation)
+- [🌐 Deployment](#-deployment)
+- [👨‍💻 Development Guide](#-development-guide)
+- [🧪 Testing](#-testing)
+- [🔐 Security & Performance](#-security--performance)
+- [🤝 Contributing](#-contributing)
+- [🔮 Future Roadmap](#-future-roadmap)
+- [📄 License](#-license)
 
-DevSecWatch addresses a critical challenge in modern software development: **identifying and fixing security vulnerabilities early in the development lifecycle**. Traditional security tools often produce overwhelming results without context or guidance. DevSecWatch solves this by:
+---
 
-- **Automating vulnerability detection** using industry-standard Semgrep rules
-- **Providing AI-powered explanations** that help developers understand security issues
-- **Offering actionable fix suggestions** with code examples and best practices
-- **Delivering real-time insights** through an intuitive dashboard
-- **Enabling interactive assistance** via an AI chat interface for security questions
+## 🎯 Project Overview
 
-### Problem Statement
-Security vulnerabilities cost organizations millions annually. Developers need tools that not only detect issues but also educate and guide them toward secure coding practices. DevSecWatch bridges the gap between security scanning and developer education.
+Traditional application security tools (SAST/SCA) often produce an overwhelming number of findings—leaving developers confused by false positives or vague descriptions of *why* the code is vulnerable. 
 
-### Solution
-A comprehensive platform that combines:
+**DevSecWatch** bridges the gap between raw security findings and developer productivity by marrying industry-standard scanning tools with advanced AI. It not only identifies vulnerabilities using tools like Semgrep and OSV but deeply analyzes them using Groq's high-speed LLMs (Llama 3.3). DevSecWatch explains the vulnerability in plain English, evaluates the specific risk context, and automatically generates production-ready code patches.
+
+### The Problem It Solves
+1. **Context-less Vulnerabilities:** Developers get flagged for security flaws without understanding the underlying attack vectors.
+2. **Slow Remediation:** Figuring out how to patch a vulnerability correctly can take hours of research.
+3. **Tool Fragmentation:** Dealing with separate tools for SAST, SCA, and reporting.
+
+### Why DevSecWatch?
+- ✅ **Zero Configuration Scanning** - Analyze repos with a single URL
+- ✅ **AI-Powered Insights** - Understand *why* code is vulnerable
+- ✅ **Instant Fixes** - Get production-ready patches, not generic advice
+- ✅ **Real-Time Feedback** - WebSocket-driven live progress updates
+- ✅ **Enterprise-Ready** - Authentication, RBAC, rate limiting, scalable
+- ✅ **Developer-First** - Beautiful UI, chat interface, quick remediation
+
+---
+
+## ✨ Key Features & Capabilities
+
+### 🔍 1. Multi-Layered Security Scanning
 - **Static Application Security Testing (SAST)** via Semgrep
-- **Large Language Model (LLM)** integration for intelligent explanations
-- **Asynchronous processing** for scalable repository scanning
-- **Real-time notifications** for immediate feedback
-- **Interactive AI assistant** for security consultations
+  - 1000+ built-in rules covering OWASP Top 10
+  - CWE and CVE pattern detection
+  - Custom rule support via `.devsecwatch_secrets.yml`
+  - Support for Java, Python, JavaScript, Go, Rust, C/C++, and more
+
+- **Software Composition Analysis (SCA)** 
+  - Maven (`pom.xml`), npm (`package.json`), Python (`requirements.txt`) parsing
+  - OSV and NVD database integration for CVE lookup
+  - Transitive dependency analysis
+  - License compliance checking
+
+- **Secret Detection**
+  - Hardcoded credentials and API keys
+  - Database connection strings
+  - SSH keys and certificates
+  - Private tokens
+
+### 🤖 2. AI-Driven Remediation (Powered by Groq & Llama 3.3)
+- **Smart Contextual Explanations**
+  - The AI reads the actual vulnerable code snippet
+  - Explains how an attacker might exploit it
+  - Provides risk assessment for the specific context
+  - 2-3 second response time via Groq API
+
+- **Auto-Fix Generation**
+  - Production-ready code patches (not pseudo-code)
+  - Drop-in replacements for vulnerable patterns
+  - Context-aware solutions respecting method signatures
+  - Language-specific best practices
+
+- **Interactive Security Copilot**
+  - Built-in chat interface for vulnerability Q&A
+  - Ask follow-up questions about specific findings
+  - Request alternative patch implementations
+  - Learn security best practices interactively
+
+- **Graceful Degradation**
+  - Template-based fallback explanations if AI unavailable
+  - 8 pre-built templates for common vulnerability types
+  - 7-day Redis cache for explanation reuse (40% cache hit rate)
+
+### ⚡ 3. Real-Time & Asynchronous Processing
+- **Event-Driven Microservices Architecture**
+  - Heavy scanning tasks delegated to Worker nodes
+  - Main API remains highly responsive (< 100ms response time)
+  - RabbitMQ-based job queue with manual acknowledgment
+  - Dead-letter queue for failed messages
+
+- **WebSocket STOMP Notifications**
+  - Live scan progress: Queued → Cloning → Scanning → AI Enrichment → Completed
+  - Real-time progress percentage display
+  - SockJS fallback for non-WebSocket browsers
+  - Per-scan topic subscriptions for privacy
+
+- **Intelligent Caching Layer**
+  - Redis cache prevents redundant LLM calls
+  - 7-day TTL on vulnerability explanations
+  - Deduplication mechanism (rate limited to 1 scan per repo per 10 minutes)
+  - Session token caching
+  - Rate limit bucket tracking
+
+### 👥 4. Enterprise Features
+- **User Authentication & Authorization**
+  - JWT-based stateless authentication (24-hour expiration)
+  - GitHub OAuth2 social login integration
+  - Role-based access control (USER, ADMIN)
+  - Password hashing with Spring Security
+
+- **Rate Limiting & Abuse Prevention**
+  - Token bucket algorithm with Redis backend
+  - 5 scans per 10 minutes per user
+  - Prevents scan duplicates
+  - DDoS protection at API gateway
+
+- **User Isolation & Data Privacy**
+  - Ownership verification on all scan operations
+  - Multi-tenant database schema
+  - User-scoped metrics and analytics
+  - Audit logging of sensitive operations
+
+- **Scalability Features**
+  - Horizontal worker scaling (1-3 concurrent scanners)
+  - Connection pooling for all data sources
+  - Load balancing ready
+  - Stateless API design
+
+### 📊 5. Analytics & Insights
+- **Security Score Calculation**
+  - Formula: `100 - (critical×10 + high×5 + medium×2 + low×1)`
+  - Normalized 0-100 scale
+  - Trend analysis over time
+
+- **Vulnerability Analytics**
+  - Distribution by severity
+  - Distribution by vulnerability type
+  - Remediation tracking
+  - Vulnerability timeline
+
+- **Risk Profiling**
+  - Team-wide security metrics
+  - Vulnerability hotspots
+  - False positive tracking
+  - Remediation velocity
 
 ---
 
-## ✨ Key Features
+## 🏗️ System Architecture
 
-### 🔍 **Automated Security Scanning**
-- Scan any public GitHub repository with a single click
-- Support for multiple programming languages (Java, Python, JavaScript, Go, etc.)
-- Powered by Semgrep's comprehensive rule sets (OWASP Top 10, CWE)
-- Asynchronous processing for large repositories
-
-### 🤖 **AI-Powered Insights**
-- **Intelligent Explanations**: Each vulnerability comes with AI-generated context
-- **Fix Recommendations**: Actionable code examples and best practices
-- **Severity Analysis**: Automatic risk assessment and prioritization
-- **Interactive Chat**: Ask security questions and get expert-level responses
-
-### 📊 **Real-Time Dashboard**
-- **Scan History**: Track all scans with status updates
-- **Vulnerability Metrics**: Visual charts for severity distribution
-- **Detailed Reports**: Drill down into specific vulnerabilities
-- **Export Capabilities**: Generate reports for compliance
-
-### 🔔 **Smart Notifications**
-- **WebSocket Integration**: Real-time scan completion alerts
-- **Notification Center**: Centralized view of all activities
-- **Mark as Read**: Manage notification states
-- **Scan-Specific Links**: Quick navigation to results
-
-### 🔐 **Enterprise Security**
-- **JWT Authentication**: Secure user sessions
-- **BCrypt Password Hashing**: Industry-standard encryption (strength 12)
-- **Rate Limiting**: Prevent API abuse (50 requests/hour for AI chat)
-- **CORS Protection**: Configurable cross-origin policies
-- **SQL Injection Prevention**: Parameterized queries via JPA/Hibernate
-
-### 💬 **AI Security Assistant**
-- **Context-Aware Responses**: Understands your scan history
-- **Code Examples**: Provides secure coding patterns
-- **Best Practices**: OWASP and industry standard recommendations
-- **Markdown Support**: Rich formatting with syntax highlighting
-- **Suggested Questions**: Guided exploration of security topics
-
----
-
-## 🏗️ Architecture
-
-DevSecWatch follows a **microservices architecture** with clear separation of concerns:
+### High-Level Microservices Diagram
 
 ```mermaid
 graph TB
+    User[Developer / CI Pipeline]
+    
     subgraph "Client Layer"
-        A[React Frontend<br/>Vite + TypeScript]
+        Frontend[React Frontend<br/>Vite + TypeScript]
     end
     
-    subgraph "API Gateway"
-        B[Backend API<br/>Spring Boot]
+    subgraph "API Gateway & Orchestration"
+        BackendAPI[Backend API Service<br/>Spring Boot 3.2.1<br/>Port 8080]
+    end
+    
+    subgraph "Asynchronous Messaging"
+        RabbitMQ["RabbitMQ 3<br/>scan-jobs<br/>ai-enrichment<br/>scan-cancellation<br/>Port 5672"]
     end
     
     subgraph "Processing Layer"
-        C[Worker Service<br/>Spring Boot]
-        D[AI Service<br/>FastAPI + Groq]
+        Worker["Worker Service<br/>Spring Boot 3.2.1<br/>Port 8081<br/>1-3 instances"]
+        AIService["AI Service<br/>FastAPI + Python<br/>Port 8000"]
     end
     
-    subgraph "Data Layer"
-        E[(PostgreSQL<br/>Relational DB)]
-        F[(Redis<br/>Cache)]
+    subgraph "Data Storage"
+        DB["PostgreSQL 15<br/>Port 5433"]
+        Redis["Redis 7<br/>Port 6379"]
     end
     
-    subgraph "Messaging"
-        G[RabbitMQ<br/>Message Queue]
+    subgraph "External Integrations"
+        GitHub["GitHub Repositories<br/>HTTPS Clone<br/>OAuth2"]
+        GroqAPI["Groq LLM API<br/>Llama-3.3-70b<br/>2-5s Response"]
+        OSV_NVD["OSV / NVD Databases<br/>CVE Lookup"]
     end
     
-    A -->|REST API| B
-    B -->|Publish Jobs| G
-    B -->|Read/Write| E
-    G -->|Consume Jobs| C
-    C -->|Clone & Scan| H[GitHub Repos]
-    C -->|Request Analysis| D
-    C -->|Check Cache| F
-    C -->|Save Results| E
-    D -->|LLM API| I[Groq Cloud]
-    B -->|WebSocket| A
+    User -->|HTTPS/WebSocket| Frontend
+    Frontend -->|REST API<br/>JWT Auth| BackendAPI
+    BackendAPI -->|Publish<br/>Jobs| RabbitMQ
+    BackendAPI -->|Read/Write| DB
+    BackendAPI -->|Cache/Rate-Limit| Redis
+    BackendAPI -->|STOMP| Frontend
+    
+    RabbitMQ -->|Consume| Worker
+    Worker -->|Clone Repos| GitHub
+    Worker -->|Check Cache| Redis
+    Worker -->|Persist Results| DB
+    Worker -->|Request Analysis| AIService
+    
+    AIService -->|Query| GroqAPI
+    AIService -->|Fallback| OSV_NVD
+    
+    Worker -->|Query| OSV_NVD
 ```
 
-### Architecture Highlights
+### Internal Component Details
 
-- **Decoupled Services**: Each component can scale independently
-- **Asynchronous Processing**: Non-blocking scan execution via message queues
-- **Caching Strategy**: Redis reduces redundant AI API calls
-- **Real-time Updates**: WebSocket for instant notifications
-- **Stateless API**: Horizontal scaling without session affinity
+#### 🖥️ Backend API Service (Spring Boot 3.2.1)
+| Aspect | Details |
+|--------|---------|
+| **Port** | 8080 |
+| **Java Version** | 21 |
+| **Database** | PostgreSQL 15 with Flyway migrations |
+| **Key Dependencies** | Spring Security, JPA, AMQP, WebFlux, OAuth2, WebSocket |
+| **Architecture** | REST API with authentication, async job orchestration |
+
+**Core Controllers:**
+- `AuthController` - JWT/OAuth2 authentication, token refresh
+- `ScanController` - Create, list, detail, cancel, delete scans
+- `ChatController` - AI chat interaction
+- `WebSocketController` - STOMP connection management
+
+**Key Services:**
+- `ScanService` - Orchestrates scan creation, job publishing, deduplication
+- `AuthService` - JWT generation, GitHub OAuth2 handling
+- `ChatService` - Relays messages to AI Service with context
+- `WebSocketNotificationService` - Real-time progress broadcasting
+- `RateLimitService` - Token bucket algorithm with Redis
+
+#### 🔄 Worker Service (Spring Boot 3.2.1)
+| Aspect | Details |
+|--------|---------|
+| **Port** | 8081 |
+| **Concurrency** | 1-3 configurable workers |
+| **Java Version** | 21 |
+| **Key Dependencies** | Spring AMQP, JPA, JGit, Docker Java SDK |
+
+**Message Listeners:**
+1. **ScanWorker** (`scan-jobs` queue) - Main scan pipeline
+   - Repository cloning via JGit
+   - Semgrep SAST scanning (Docker-isolated)
+   - Dependency scanning (OSV/NVD)
+   - AI enrichment job publishing
+
+2. **AiEnrichmentWorker** (`ai-enrichment` queue) - Background AI processing
+   - Processes pending vulnerabilities asynchronously
+   - Redis cache lookup for explanations
+   - AI Service API calls
+   - Batch processing for efficiency
+
+3. **ScanCancellationListener** (`scan-cancellation` queue) - Graceful shutdown
+   - Terminates running processes
+   - Updates scan status to CANCELLED
+   - Cleans up resources
+
+**Key Services:**
+- `SemgrepService` - Docker-based Semgrep execution with 300s timeout, 512MB memory limit
+- `GitService` - JGit repository cloning with branch support
+- `DependencyScanner` - Parses pom.xml, package.json, requirements.txt → queries OSV/NVD
+- `AIEnrichmentService` - Orchestrates AI explanation requests with caching
+- `GracefulShutdownService` - Handles SIGTERM for graceful worker termination
+
+#### 🤖 AI Service (FastAPI + Python)
+| Aspect | Details |
+|--------|---------|
+| **Port** | 8000 |
+| **Language** | Python 3.11 |
+| **LLM Provider** | Groq API (Llama-3.3-70b-versatile) |
+| **Response Time** | 2-5 seconds per request |
+
+**Endpoints:**
+- `GET /health` - Service health check
+- `POST /analyze` - Analyze single vulnerability with AI
+- `POST /chat` - Interactive chat with LLM
+
+**Services:**
+- `LLMService` - Groq API integration with prompt engineering
+- `ValidationService` - AI response quality validation
+- Template system - 8 pre-built templates for fallback
+
+#### 💾 Database Layer (PostgreSQL 15)
+```sql
+-- User Management
+Users: id, username, email, password_hash, roles, created_at
+
+-- Scans & Results
+Scans: id, user_id, repo_url, branch, status, total_files, 
+       lines_of_code, critical/high/medium/low_count, 
+       error_message, created_at, started_at, completed_at
+
+Vulnerabilities: id, scan_id, file_path, line_number, 
+                 vulnerability_type, severity, confidence,
+                 ai_status, description, code_snippet, 
+                 fix_suggestion, cve_id, cvss_score,
+                 is_template_explanation, created_at
+
+ScanMetrics: id, scan_id, total_vulnerabilities, 
+             high_severity_count, execution_time_ms
+
+Notifications: id, user_id, message, status, created_at
+```
+
+**Indexing Strategy:**
+- `scans(user_id, created_at)` - User scan queries
+- `vulnerabilities(scan_id, severity)` - Severity filtering
+- `users(username)` - Auth lookups
+
+#### ⚙️ Caching Layer (Redis 7)
+| Purpose | TTL | Key Format |
+|---------|-----|------------|
+| Vulnerability explanations | 7 days | `explanation:{rule_id}:{code_hash}` |
+| Rate limit buckets | 10 min | `ratelimit:{username}` |
+| Scan deduplication | 10 min | `scan-dedup:{repo_url}:{branch}` |
+| Session tokens | 24 hours | `session:{token}` |
+
+#### 📨 Message Queue (RabbitMQ 3)
+| Queue | Consumer | Purpose |
+|-------|----------|---------|
+| `scan-jobs` | ScanWorker | Initial scan processing |
+| `ai-enrichment` | AiEnrichmentWorker | Background AI enrichment |
+| `scan-notifications` | WebSocket | Real-time UI updates |
+| `scan-cancellation` | ScanCancellationListener | Graceful shutdown |
+| `dlx.scan-jobs` | (DLX) | Failed message storage |
+
+---
+
+## 🔄 Detailed Data Flow
+
+### Complete Scan Workflow
+
+```
+1. USER INITIATES SCAN
+   Frontend → POST /api/scans { repoUrl: "https://github.com/user/repo", branch: "main" }
+   
+2. BACKEND VALIDATION & ORCHESTRATION
+   BackendAPI receives request
+   ├─ Validates GitHub URL format
+   ├─ Checks rate limit (5/10min)
+   ├─ Deduplicates (Redis lock: scan-dedup key)
+   ├─ Creates Scan entity (status: QUEUED)
+   ├─ Publishes ScanMessage → RabbitMQ[scan-jobs]
+   └─ Returns Scan ID with 202 Accepted
+
+3. FRONTEND SUBSCRIPTION
+   Frontend subscribes to WebSocket
+   └─ STOMP: /subscribe /topic/scans/{scanId}
+
+4. WORKER CONSUMES JOB
+   Worker[#1] receives ScanMessage from queue
+   └─ Registers scan in ProcessRegistry
+
+5. GIT CLONING PHASE
+   GitService.clone(repoUrl, branch)
+   ├─ Validates GitHub accessibility
+   ├─ Clones to /tmp/devsecwatch/{scanId}
+   ├─ Checks out specified branch
+   ├─ Publishes WebSocket: "Cloning... 25%"
+   └─ Duration: 5-30 seconds (repo size dependent)
+
+6. SAST SCANNING PHASE (Semgrep)
+   SemgrepService.scanRepository()
+   ├─ Docker execution: returntocorp/semgrep:latest
+   ├─ Memory limit: 512MB, CPU: 0.5 cores
+   ├─ Timeout: 300 seconds
+   ├─ Config: Semgrep auto-detect + custom rules
+   ├─ Output: JSON with findings
+   ├─ Creates Finding objects (severity, rule_id, code_snippet)
+   ├─ Publishes WebSocket: "Running Semgrep... 50%"
+   └─ Duration: 10-120 seconds (code volume dependent)
+
+7. SCA SCANNING PHASE (Dependencies)
+   DependencyScanner.scan()
+   ├─ Maven: Parses pom.xml → queries OSV/NVD
+   ├─ npm: Parses package.json → checks devDependencies + transitive
+   ├─ Python: Parses requirements.txt → pip lookup
+   ├─ Creates Finding objects for CVEs
+   ├─ Publishes WebSocket: "Scanning dependencies... 75%"
+   └─ Duration: 5-20 seconds (dependency count)
+
+8. PERSISTENCE & AI ENRICHMENT SUBMISSION
+   Worker persists findings with ai_status: PENDING
+   ├─ Batches findings (10-1000 results typical)
+   ├─ For each finding:
+   │  ├─ Publishes AiEnrichmentMessage → RabbitMQ[ai-enrichment]
+   │  ├─ Updates Scan status: IN_PROGRESS → ENRICHING
+   │  └─ Publishes WebSocket: "Generating AI fixes... 90%"
+   └─ Duration: 1-2 seconds
+
+9. SCAN COMPLETION
+   Worker completes, publishes WebSocket: "Scan Complete 100%"
+   └─ Updates Scan status: COMPLETED
+
+10. BACKGROUND: AI ENRICHMENT (Asynchronous)
+    AiEnrichmentWorker processes queue
+    For each AiEnrichmentMessage:
+    ├─ Redis cache lookup: explanation:{rule_id}
+    ├─ If HIT: Retrieve cached explanation
+    ├─ If MISS:
+    │  ├─ POST /api/ai/analyze {vulnerability_type, code_snippet, ...}
+    │  ├─ AI Service processes via Groq API
+    │  ├─ Validates response format
+    │  ├─ Caches in Redis for 7 days
+    │  └─ Duration: 2-5 seconds per vulnerability
+    ├─ Updates Vulnerability:
+    │  ├─ description, fix_suggestion
+    │  ├─ ai_status: COMPLETED
+    │  └─ confidence: AI_GENERATED or TEMPLATE
+    └─ Publishes WebSocket: "Vulnerability explained..."
+
+11. FRONTEND DISPLAYS RESULTS
+    Frontend receives real-time updates
+    ├─ Polls GET /api/scans/{scanId} for status
+    ├─ Receives WebSocket messages on progress
+    ├─ Fetches GET /api/scans/{scanId}/vulnerabilities
+    └─ Renders vulnerability list with:
+        ├─ Severity badges
+        ├─ Code snippets with syntax highlighting
+        ├─ AI explanations
+        ├─ Fix suggestions
+        └─ Confidence indicators
+```
+
+### Chat Interaction Flow
+
+```
+USER ASKS QUESTION
+Frontend: POST /api/chat/message 
+{
+  "message": "How do I fix this SQL injection?",
+  "history": [{user}, {assistant}, ...],
+  "context": "SELECT * FROM users WHERE id = \" + input"
+}
+    ↓
+BACKEND RELAY
+BackendAPI:
+├─ Validates JWT token
+├─ Checks rate limit (per user)
+└─ Forwards to AI Service
+    ↓
+AI SERVICE PROCESSING
+AIService: POST /chat (via FastAPI)
+├─ Builds conversation with system prompt
+├─ Includes vulnerability context
+├─ Sends to Groq LLM API
+└─ Duration: 2-5 seconds
+    ↓
+RESPONSE STREAMING
+Frontend receives response in chunks
+├─ Displays typing indicator
+├─ Renders markdown with code highlighting
+└─ Updates conversation history
+```
 
 ---
 
 ## 🛠️ Technology Stack
 
-### **Backend Services**
+### Backend Services
+| Layer | Technology | Version | Purpose |
+|-------|-----------|---------|---------|
+| **Framework** | Spring Boot | 3.2.1 | REST API, async processing |
+| **Language** | Java | 21 | Type safety, performance |
+| **Authentication** | Spring Security + JWT | 0.12.5 | Stateless auth |
+| **Database ORM** | Spring JPA + Hibernate | Latest | Object-relational mapping |
+| **Job Queue** | RabbitMQ | 3 | Async message processing |
+| **Caching** | Redis | 7 | Distributed cache |
+| **Git Operations** | JGit | 6.8.0 | Repository cloning |
+| **SAST Tool** | Semgrep | Latest | Static analysis |
+| **Build Tool** | Maven | 3.9+ | Dependency management |
 
-| Component | Technology | Purpose |
-|-----------|-----------|---------|
-| **Backend API** | Spring Boot 3.2.1 (Java 21) | REST API, Authentication, WebSocket |
-| **Worker Service** | Spring Boot 3.2.1 (Java 21) | Scan processing, Git operations |
-| **AI Service** | Python 3.11 + FastAPI | LLM proxy, AI explanations |
+### Frontend
+| Layer | Technology | Version | Purpose |
+|-------|-----------|---------|---------|
+| **Framework** | React | 18 | Component-based UI |
+| **Language** | TypeScript | 5 | Type safety |
+| **Build Tool** | Vite | 5 | Fast bundling |
+| **Styling** | TailwindCSS | 3.4.1 | Utility-first CSS |
+| **State Management** | Zustand | 5 | Lightweight stores |
+| **HTTP Client** | Axios | 1.13.2 | API requests |
+| **WebSocket** | @stomp/stompjs | 7.2.1 | Real-time updates |
+| **Markdown** | react-markdown | 10.1.0 | Rendering |
+| **Syntax Highlighting** | react-syntax-highlighter | 16.1.0 | Code display |
+| **Charts** | Recharts | 3.7.0 | Analytics |
+| **Icons** | lucide-react | 0.563 | UI icons |
+| **UI Components** | Radix UI | Latest | Accessible components |
 
-### **Frontend**
+### AI & LLM
+| Component | Technology | Version | Purpose |
+|-----------|-----------|---------|---------|
+| **LLM Provider** | Groq | Latest | Llama-3.3 inference |
+| **API Framework** | FastAPI | 0.109.0 | Python web server |
+| **Server** | Uvicorn | 0.27.0 | ASGI server |
+| **LLM SDK** | groq-python | 0.4.1 | Groq API client |
+| **Data Validation** | Pydantic | 2.5.3 | Request/response validation |
+| **Cache Client** | redis-py | 5.0.1 | Redis interface |
 
-| Component | Technology | Purpose |
-|-----------|-----------|---------|
-| **UI Framework** | React 18.2 + TypeScript | Component-based UI |
-| **Build Tool** | Vite 5.0 | Fast development & bundling |
-| **Styling** | Tailwind CSS 3.4 | Utility-first CSS |
-| **State Management** | Zustand 5.0 | Lightweight state store |
-| **Routing** | React Router 7.13 | Client-side navigation |
-| **Charts** | Recharts 3.7 | Data visualization |
-| **Markdown** | React Markdown 10.1 | Rich text rendering |
-
-### **Infrastructure**
-
-| Component | Technology | Purpose |
-|-----------|-----------|---------|
-| **Database** | PostgreSQL 15 | Persistent data storage |
-| **Message Queue** | RabbitMQ 3 | Asynchronous job processing |
-| **Cache** | Redis 7 | AI response caching |
-| **Security Scanner** | Semgrep | Static code analysis |
-| **AI Provider** | Groq (Llama 3.3 70B) | Natural language processing |
-
-### **DevOps & Tools**
-
-- **Containerization**: Docker + Docker Compose
-- **Build Tools**: Maven 3.9, npm
-- **Database Migration**: Flyway
-- **API Client**: Axios
-- **WebSocket**: STOMP.js + SockJS
-- **Authentication**: JWT (JSON Web Tokens)
+### Infrastructure & Data
+| Component | Technology | Version | Purpose |
+|-----------|-----------|---------|---------|
+| **Database** | PostgreSQL | 15 | Relational storage |
+| **Cache** | Redis | 7 | In-memory caching |
+| **Message Queue** | RabbitMQ | 3 | Async messaging |
+| **Container Runtime** | Docker | Latest | Sandboxed Semgrep |
+| **Deployment** | Railway / Vercel | - | Cloud hosting |
 
 ---
 
-## 💡 Core Capabilities
-
-### 1. **Repository Scanning Workflow**
+## 📂 Complete Repository Structure
 
 ```
-User submits GitHub URL
-    ↓
-Backend validates & creates Scan record (QUEUED)
-    ↓
-Message published to RabbitMQ
-    ↓
-Worker consumes message
-    ↓
-Repository cloned to temporary storage
-    ↓
-Semgrep analysis executed
-    ↓
-Vulnerabilities parsed & categorized
-    ↓
-AI enrichment (with Redis caching)
-    ↓
-Results saved to PostgreSQL
-    ↓
-Scan status updated (COMPLETED)
-    ↓
-WebSocket notification sent to user
+DevSecWatch/
+├── README.md                                # Main documentation
+├── ARCHITECTURE.md                          # System design details
+├── DEPLOYMENT.md                            # Deployment guide
+├── docker-compose.yml                       # Local development stack
+├── start_all.ps1                           # PowerShell startup script
+├── test_apis.py                            # Integration test suite
+├── semgrep_report.json                     # Sample Semgrep output
+│
+├── backend-api/                            # Spring Boot REST API
+│   ├── pom.xml                            # Maven configuration (Java 21)
+│   ├── Dockerfile                         # Docker image
+│   ├── README.md                          # Service documentation
+│   └── src/main/
+│       ├── java/com/devsecwatch/backend/
+│       │   ├── DeveloperApi.java         # Main Spring Boot app
+│       │   ├── config/                   # Spring configuration
+│       │   │   ├── CorsConfig.java
+│       │   │   ├── SecurityConfig.java
+│       │   │   ├── WebSocketConfig.java
+│       │   │   └── RabbitmqConfig.java
+│       │   ├── controller/               # REST endpoints
+│       │   │   ├── AuthController.java
+│       │   │   ├── ScanController.java
+│       │   │   ├── ChatController.java
+│       │   │   └── WebSocketController.java
+│       │   ├── service/                  # Business logic
+│       │   │   ├── ScanService.java
+│       │   │   ├── AuthService.java
+│       │   │   ├── ChatService.java
+│       │   │   ├── RateLimitService.java
+│       │   │   └── WebSocketNotificationService.java
+│       │   ├── model/                    # JPA entities
+│       │   │   ├── User.java
+│       │   │   ├── Scan.java
+│       │   │   ├── Vulnerability.java
+│       │   │   ├── ScanMetrics.java
+│       │   │   └── Notification.java
+│       │   ├── repository/               # Data access layer
+│       │   │   ├── UserRepository.java
+│       │   │   ├── ScanRepository.java
+│       │   │   ├── VulnerabilityRepository.java
+│       │   │   └── ScanMetricsRepository.java
+│       │   ├── dto/                      # Data transfer objects
+│       │   │   ├── ScanRequest.java
+│       │   │   ├── ScanResponse.java
+│       │   │   ├── ChatRequest.java
+│       │   │   └── ChatResponse.java
+│       │   ├── security/                 # Authentication
+│       │   │   ├── JwtUtil.java
+│       │   │   ├── JwtFilter.java
+│       │   │   └── OAuth2Handler.java
+│       │   └── message/                  # RabbitMQ messages
+│       │       ├── ScanMessage.java
+│       │       ├── AiEnrichmentMessage.java
+│       │       └── ScanCancellationMessage.java
+│       └── resources/
+│           ├── application.yml           # Default configuration
+│           ├── application-prod.yml      # Production config
+│           └── db/migration/             # Flyway migrations
+│               └── V1__Initial_Schema.sql
+│
+├── worker-service/                         # Spring Boot scan processor
+│   ├── pom.xml                           # Maven configuration
+│   ├── Dockerfile                        # Docker image
+│   ├── README.md                         # Service documentation
+│   └── src/main/
+│       ├── java/com/devsecwatch/worker/
+│       │   ├── WorkerServiceApplication.java
+│       │   ├── listener/                 # RabbitMQ listeners
+│       │   │   ├── ScanWorker.java
+│       │   │   ├── AiEnrichmentWorker.java
+│       │   │   └── ScanCancellationListener.java
+│       │   ├── service/                  # Processing services
+│       │   │   ├── SemgrepService.java
+│       │   │   ├── GitService.java
+│       │   │   ├── DependencyScanner.java
+│       │   │   ├── AIEnrichmentService.java
+│       │   │   ├── ScanProcessRegistry.java
+│       │   │   └── GracefulShutdownService.java
+│       │   ├── model/                    # Data models
+│       │   │   ├── Finding.java
+│       │   │   ├── SemgrepResult.java
+│       │   │   ├── EnrichedFinding.java
+│       │   │   └── AIExplanation.java
+│       │   └── repository/               # Database access
+│       │       └── (uses backend entities)
+│       └── resources/
+│           ├── application.yml
+│           └── application-prod.yml
+│
+├── ai-service/                            # FastAPI AI processor
+│   ├── requirements.txt                  # Python dependencies
+│   ├── Dockerfile                        # Docker image
+│   ├── README.md                         # Service documentation
+│   ├── .env.example                      # Environment template
+│   └── app/
+│       ├── main.py                       # FastAPI application
+│       ├── config.py                     # Configuration (Pydantic)
+│       ├── models.py                     # Request/response models
+│       │   ├── AnalysisRequest
+│       │   ├── AnalysisResponse
+│       │   ├── ChatRequest
+│       │   ├── ChatResponse
+│       │   └── HealthResponse
+│       ├── services/
+│       │   ├── llm_service.py           # Groq API integration
+│       │   └── validation_service.py    # Response validation
+│       └── templates/
+│           └── explanations.py          # Template explanations
+│               ├── SQL_INJECTION
+│               ├── HARDCODED_CREDENTIALS
+│               ├── XSS
+│               ├── PATH_TRAVERSAL
+│               ├── XXE
+│               ├── COMMAND_INJECTION
+│               ├── INSECURE_DESERIALIZATION
+│               └── (DEFAULT template)
+│
+├── devsecwatch-frontend/                  # React SPA
+│   ├── package.json                     # Node dependencies
+│   ├── tsconfig.json                    # TypeScript config
+│   ├── vite.config.ts                   # Vite bundler config
+│   ├── tailwind.config.js               # TailwindCSS config
+│   ├── index.html                       # HTML entry point
+│   ├── README.md                        # Frontend docs
+│   └── src/
+│       ├── main.tsx                     # React entry
+│       ├── App.tsx                      # Root component
+│       ├── vite-env.d.ts               # Vite type definitions
+│       ├── pages/
+│       │   ├── Login.tsx                # Email/password auth
+│       │   ├── Register.tsx             # Account creation
+│       │   ├── AuthCallback.tsx         # GitHub OAuth handler
+│       │   ├── Dashboard.tsx            # Scan list + overview
+│       │   ├── NewScan.tsx              # Create scan form
+│       │   ├── ScanDetail.tsx           # Vulnerability details
+│       │   ├── ChatAssistant.tsx        # AI chat interface
+│       │   └── Analytics.tsx            # Trends + metrics
+│       ├── components/
+│       │   ├── Layout.tsx               # App layout wrapper
+│       │   ├── ThemeToggle.tsx          # Dark/light mode
+│       │   ├── NotificationCenter.tsx   # Toast notifications
+│       │   └── chat/
+│       │       ├── ChatInput.tsx
+│       │       ├── ChatMessage.tsx
+│       │       ├── CodeBlock.tsx
+│       │       ├── SuggestedQuestions.tsx
+│       │       └── TypingIndicator.tsx
+│       ├── services/
+│       │   ├── api.ts                   # Axios instance + interceptors
+│       │   ├── auth.ts                  # Authentication service
+│       │   ├── scan.ts                  # Scan operations
+│       │   ├── chatService.ts           # Chat API calls
+│       │   └── analytics.ts             # Analytics data
+│       ├── hooks/
+│       │   ├── useChat.ts               # Chat state logic
+│       │   └── useWebSocket.ts          # WebSocket connection
+│       ├── store/                       # Zustand state management
+│       │   ├── authStore.ts
+│       │   ├── scanStore.ts
+│       │   ├── notificationStore.ts
+│       │   └── themeStore.ts
+│       ├── types/
+│       │   └── index.ts                 # TypeScript interfaces
+│       ├── assets/                      # Static files
+│       └── styles/
+│           ├── App.css
+│           └── index.css
+│
+├── test-repo/                            # Test fixture repository
+│   ├── package.json                     # Example npm vulnerabilities
+│   ├── requirements.txt                 # Example Python vulns
+│   ├── Secret.java                      # Hardcoded secrets example
+│   └── SqlInjection.java                # SQL injection example
+│
+└── DevSecWatch/                          # Legacy backend folder
+    └── (Mirror of backend-api)
 ```
 
-### 2. **AI Enrichment Process**
-
-- **Input**: Raw Semgrep vulnerability data (CWE ID, rule, code snippet)
-- **Processing**: 
-  - Check Redis cache for existing explanation
-  - If not cached, call Groq API with structured prompt
-  - Parse response for explanation, fix, and best practices
-  - Store in Redis with 7-day TTL
-- **Output**: Human-readable explanation with actionable guidance
-
-### 3. **Real-Time Notification System**
-
-- **WebSocket Connection**: Established on user login
-- **STOMP Protocol**: Pub/sub messaging over WebSocket
-- **Notification Types**: 
-  - Scan completion (success/failure)
-  - Vulnerability severity alerts
-  - System announcements
-- **Persistence**: Notifications stored in PostgreSQL
-- **UI Integration**: Notification center with unread count badge
-
-### 4. **AI Chat Assistant**
-
-- **Context Building**: Aggregates user's scan history
-- **Conversation Memory**: Maintains chat history in session
-- **Suggested Questions**: Dynamic based on scan results
-- **Rate Limiting**: 50 requests/hour per user
-- **Response Formatting**: Markdown with code syntax highlighting
-
 ---
 
-## 🔧 System Components
+## 🚀 Getting Started (Local Setup)
 
-### **1. Backend API** (`backend-api/`)
-
-**Responsibilities**:
-- User authentication & authorization (JWT)
-- Scan management (CRUD operations)
-- WebSocket server for real-time notifications
-- REST API endpoints for frontend
-- Database schema management (Flyway migrations)
-
-**Key Endpoints**:
-- `POST /api/auth/register` - User registration
-- `POST /api/auth/login` - User authentication
-- `POST /api/scans` - Create new scan
-- `GET /api/scans/{id}` - Get scan details
-- `GET /api/notifications` - Fetch user notifications
-- `POST /api/chat/message` - AI chat interaction
-- `WS /ws` - WebSocket connection
-
-**Technologies**:
-- Spring Boot Web, Security, Data JPA
-- PostgreSQL driver
-- RabbitMQ AMQP client
-- Redis client
-- JWT library (io.jsonwebtoken)
-- Flyway migration
-- Lombok for boilerplate reduction
-
----
-
-### **2. Worker Service** (`worker-service/`)
-
-**Responsibilities**:
-- Consume scan jobs from RabbitMQ
-- Clone GitHub repositories
-- Execute Semgrep scans
-- Parse and categorize vulnerabilities
-- Enrich findings with AI explanations
-- Persist results to database
-
-**Key Components**:
-- `ScanConsumer`: RabbitMQ message listener
-- `GitService`: Repository cloning & cleanup
-- `SemgrepService`: Semgrep execution & parsing
-- `AIEnrichmentService`: AI explanation generation
-- `ResultPersistenceService`: Database operations
-
-**Technologies**:
-- Spring Boot AMQP
-- JGit for Git operations
-- ProcessBuilder for Semgrep execution
-- WebClient for AI service calls
-- Redis for caching
-
----
-
-### **3. AI Service** (`ai-service/`)
-
-**Responsibilities**:
-- Proxy requests to Groq API
-- Generate vulnerability explanations
-- Provide chat responses
-- Handle rate limiting & error recovery
-
-**Key Endpoints**:
-- `POST /analyze` - Vulnerability explanation
-- `POST /chat` - Chat conversation
-- `GET /health` - Health check
-
-**Technologies**:
-- FastAPI framework
-- Pydantic for data validation
-- Groq Python SDK
-- Uvicorn ASGI server
-
----
-
-### **4. Frontend** (`devsecwatch-frontend/`)
-
-**Responsibilities**:
-- User interface for all features
-- Authentication flow
-- Scan creation & monitoring
-- Vulnerability visualization
-- Real-time notification display
-- AI chat interface
-
-**Key Pages**:
-- `/login` - Authentication
-- `/dashboard` - Overview & metrics
-- `/scans` - Scan history
-- `/scan/:id` - Detailed scan results
-- `/new-scan` - Create scan
-- `/chat` - AI assistant
-
-**Key Components**:
-- `Layout`: Navigation & notification center
-- `Dashboard`: Metrics & charts
-- `ScanResults`: Vulnerability table & details
-- `ChatAssistant`: AI chat interface
-- `NotificationCenter`: Real-time alerts
-
-**State Management**:
-- `authStore`: User authentication state
-- `scanStore`: Scan data & operations
-- `notificationStore`: Notification management
-
----
-
-## 🚀 Getting Started
-
-### **Prerequisites**
-
-- **Java Development Kit (JDK)**: 21 or higher
-- **Node.js**: 20.x or higher
-- **Python**: 3.11 or higher
-- **Docker**: For PostgreSQL, RabbitMQ, Redis
-- **Semgrep**: Install via `pip install semgrep`
-- **Git**: For repository cloning
-- **Maven**: 3.9 or higher
-
-### **Local Development Setup**
-
-#### **1. Clone the Repository**
+### Prerequisites
 
 ```bash
-git clone https://github.com/yourusername/DevSecWatch.git
-cd DevSecWatch
+# Ensure you have these installed:
+- Java Development Kit (JDK) 21+
+- Maven 3.9+
+- Node.js 18+
+- npm 10+
+- Docker & Docker Compose
+- Python 3.11+
+- Git
+- Groq API Key (get from https://console.groq.com)
 ```
 
-#### **2. Start Infrastructure Services**
+### Option 1: Docker Compose (Recommended)
 
 ```bash
-# Start PostgreSQL, RabbitMQ, and Redis
+# 1. Clone repository
+git clone https://github.com/yourusername/devsecwatch.git
+cd devsecwatch
+
+# 2. Start all services
 docker-compose up -d
 
-# Verify services are running
-docker ps
+# Services will be available at:
+# - Frontend:    http://localhost:5173 (Vite dev server)
+# - Backend:     http://localhost:8080
+# - Worker:      http://localhost:8081
+# - AI Service:  http://localhost:8000
+# - RabbitMQ:    http://localhost:15672 (guest/guest)
+# - PostgreSQL:  localhost:5433 (postgres/postgres)
+# - Redis:       localhost:6379
+
+# 3. Initialize database
+curl -X GET http://localhost:8080/api/health
+
+# 4. Test the system
+python test_apis.py
 ```
 
-#### **3. Configure Environment Variables**
+### Option 2: Manual Local Development
 
-**Backend API** (`backend-api/src/main/resources/application.yml`):
-```yaml
-# Already configured with defaults for local development
-# No changes needed for local setup
-```
-
-**AI Service** (`ai-service/.env`):
-```bash
-GROQ_API_KEY=your_groq_api_key_here
-GROQ_BASE_URL=https://api.groq.com/openai/v1
-```
-
-> **Get Groq API Key**: Sign up at [console.groq.com](https://console.groq.com)
-
-#### **4. Start Backend API**
-
+#### Backend API
 ```bash
 cd backend-api
-mvn clean install
+
+# Build
+mvn clean package
+
+# Run
+java -jar target/backend-api-0.0.1-SNAPSHOT.jar
+
+# Or run with Maven
 mvn spring-boot:run
+
+# Available at: http://localhost:8080
+# Health check: http://localhost:8080/actuator/health
 ```
 
-Backend will start on `http://localhost:8080`
-
-#### **5. Start Worker Service**
-
+#### Worker Service
 ```bash
 cd worker-service
-mvn clean install
+
+# Build
+mvn clean package
+
+# Run
+java -jar target/worker-service-0.0.1-SNAPSHOT.jar
+
+# Or with Maven
 mvn spring-boot:run
 ```
 
-#### **6. Start AI Service**
-
+#### AI Service
 ```bash
 cd ai-service
+
+# Create virtual environment
+python -m venv venv
+
+# Activate (Linux/Mac)
+source venv/bin/activate
+
+# Activate (Windows)
+venv\Scripts\activate
+
+# Install dependencies
 pip install -r requirements.txt
-python -m uvicorn app.main:app --host 127.0.0.1 --port 8000
+
+# Set environment variables
+export GROQ_API_KEY="your-groq-api-key"
+export BACKEND_URL="http://localhost:8080"
+
+# Run
+python -m uvicorn app.main:app --reload --port 8000
 ```
 
-AI Service will start on `http://localhost:8000`
-
-#### **7. Start Frontend**
-
+#### Frontend
 ```bash
 cd devsecwatch-frontend
+
+# Install dependencies
 npm install
+
+# Start dev server
 npm run dev
+
+# Available at: http://localhost:5173
 ```
 
-Frontend will start on `http://localhost:5173`
+### Environment Configuration
 
-### **First-Time Setup**
+Create `.env` files for each service:
 
-1. **Register a User**: Navigate to `http://localhost:5173/register`
-2. **Login**: Use your credentials at `http://localhost:5173/login`
-3. **Create a Scan**: 
-   - Go to "New Scan"
-   - Enter a GitHub repository URL (e.g., `https://github.com/spring-projects/spring-petclinic`)
-   - Click "Start Scan"
-4. **Monitor Progress**: Watch real-time notifications
-5. **View Results**: Click on completed scan to see vulnerabilities
-6. **Try AI Chat**: Navigate to "AI Assistant" and ask security questions
+**backend-api/.env**
+```env
+SPRING_DATASOURCE_URL=jdbc:postgresql://localhost:5433/devsecwatch
+SPRING_DATASOURCE_USERNAME=postgres
+SPRING_DATASOURCE_PASSWORD=postgres
+SPRING_RABBITMQ_HOST=localhost
+SPRING_RABBITMQ_PORT=5672
+SPRING_DATA_REDIS_URL=redis://localhost:6379
+JWT_SECRET=your-super-secret-jwt-key-min-64-chars-long!!!!
+FRONTEND_URL=http://localhost:5173
+```
+
+**ai-service/.env**
+```env
+GROQ_API_KEY=gsk_xxxxx
+BACKEND_URL=http://localhost:8080
+REDIS_URL=redis://localhost:6379
+```
+
+**devsecwatch-frontend/.env**
+```env
+VITE_API_URL=http://localhost:8080
+```
+
+### Verify Installation
+
+```bash
+# Health checks
+curl http://localhost:8080/actuator/health
+curl http://localhost:8000/health
+curl http://localhost:5173
+
+# Create test scan
+curl -X POST http://localhost:8080/api/scans \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer {token}" \
+  -d '{"repoUrl": "https://github.com/spring-projects/spring-petclinic"}'
+```
+
+---
+
+## 🔌 API Documentation
+
+### Authentication Endpoints
+
+#### Register New User
+```http
+POST /api/auth/register
+Content-Type: application/json
+
+{
+  "username": "john_doe",
+  "email": "john@example.com",
+  "password": "SecurePassword123!"
+}
+
+Response: 201 Created
+{
+  "accessToken": "eyJhbGciOiJIUzI1NiIs...",
+  "refreshToken": "eyJhbGciOiJIUzI1NiIs...",
+  "user": {
+    "id": 1,
+    "username": "john_doe",
+    "email": "john@example.com",
+    "roles": ["USER"]
+  }
+}
+```
+
+#### Login with Email/Password
+```http
+POST /api/auth/login
+Content-Type: application/json
+
+{
+  "email": "john@example.com",
+  "password": "SecurePassword123!"
+}
+
+Response: 200 OK
+{
+  "accessToken": "eyJhbGciOiJIUzI1NiIs...",
+  "refreshToken": "eyJhbGciOiJIUzI1NiIs...",
+  "user": { ... }
+}
+```
+
+#### Refresh Token
+```http
+POST /api/auth/refresh
+Content-Type: application/json
+
+{
+  "refreshToken": "eyJhbGciOiJIUzI1NiIs..."
+}
+
+Response: 200 OK
+{
+  "accessToken": "eyJhbGciOiJIUzI1NiIs...",
+  "refreshToken": "eyJhbGciOiJIUzI1NiIs..."
+}
+```
+
+### Scan Endpoints
+
+#### Create New Scan
+```http
+POST /api/scans
+Authorization: Bearer {accessToken}
+Content-Type: application/json
+
+{
+  "repoUrl": "https://github.com/user/repository",
+  "branch": "main"  # optional, defaults to 'main'
+}
+
+Response: 202 Accepted
+{
+  "id": 123,
+  "userId": 1,
+  "repoUrl": "https://github.com/user/repository",
+  "branch": "main",
+  "status": "QUEUED",
+  "createdAt": "2026-05-25T10:30:00Z",
+  "startedAt": null,
+  "completedAt": null
+}
+```
+
+#### List User Scans
+```http
+GET /api/scans?page=0&size=20
+Authorization: Bearer {accessToken}
+
+Response: 200 OK
+{
+  "content": [
+    {
+      "id": 123,
+      "repoUrl": "https://github.com/user/repository",
+      "status": "COMPLETED",
+      "totalVulnerabilities": 15,
+      "criticalCount": 2,
+      "highCount": 5,
+      "mediumCount": 6,
+      "lowCount": 2,
+      "createdAt": "2026-05-25T10:30:00Z"
+    },
+    ...
+  ],
+  "totalElements": 42,
+  "totalPages": 3,
+  "currentPage": 0
+}
+```
+
+#### Get Scan Details
+```http
+GET /api/scans/123
+Authorization: Bearer {accessToken}
+
+Response: 200 OK
+{
+  "id": 123,
+  "userId": 1,
+  "repoUrl": "https://github.com/user/repository",
+  "status": "COMPLETED",
+  "totalFiles": 245,
+  "linesOfCode": 18500,
+  "totalVulnerabilities": 15,
+  "criticalCount": 2,
+  "highCount": 5,
+  "mediumCount": 6,
+  "lowCount": 2,
+  "startedAt": "2026-05-25T10:31:00Z",
+  "completedAt": "2026-05-25T10:45:30Z",
+  "metrics": {
+    "executionTimeMs": 870000,
+    "scannerVersion": "1.0.0"
+  }
+}
+```
+
+#### Get Scan Vulnerabilities
+```http
+GET /api/scans/123/vulnerabilities?severity=CRITICAL&type=SQL_INJECTION
+Authorization: Bearer {accessToken}
+
+Response: 200 OK
+{
+  "vulnerabilities": [
+    {
+      "id": 456,
+      "scanId": 123,
+      "filePath": "src/main/java/com/example/UserDAO.java",
+      "lineNumber": 42,
+      "vulnerabilityType": "SQL_INJECTION",
+      "severity": "CRITICAL",
+      "confidence": "AI_GENERATED",
+      "description": "This SQL query concatenates user input without parameterization...",
+      "codeSnippet": "String query = \"SELECT * FROM users WHERE id = \" + userId;",
+      "fixSuggestion": "Use PreparedStatement: stmt.setString(1, userId);",
+      "cveId": "CVE-2023-12345",
+      "cvssScore": 9.8,
+      "aiStatus": "COMPLETED",
+      "createdAt": "2026-05-25T10:45:20Z"
+    },
+    ...
+  ]
+}
+```
+
+#### Cancel Scan
+```http
+POST /api/scans/123/cancel
+Authorization: Bearer {accessToken}
+
+Response: 200 OK
+{
+  "id": 123,
+  "status": "CANCELLED",
+  "message": "Scan cancelled successfully"
+}
+```
+
+#### Delete Scan
+```http
+DELETE /api/scans/123
+Authorization: Bearer {accessToken}
+
+Response: 204 No Content
+```
+
+### Chat Endpoints
+
+#### Send Chat Message
+```http
+POST /api/chat/message
+Authorization: Bearer {accessToken}
+Content-Type: application/json
+
+{
+  "message": "How do I fix this SQL injection vulnerability?",
+  "history": [
+    {"role": "user", "content": "What vulnerabilities were found?"},
+    {"role": "assistant", "content": "Found 3 SQL injection issues..."}
+  ],
+  "context": "Vulnerability: SQL_INJECTION in line 42 of UserDAO.java"
+}
+
+Response: 200 OK
+{
+  "response": "To fix this SQL injection, you should use parameterized queries. Here's how...",
+  "model": "llama-3.3-70b-versatile"
+}
+```
+
+#### Test Authentication
+```http
+GET /api/chat/test-auth
+Authorization: Bearer {accessToken}
+
+Response: 200 OK
+{
+  "authenticated": true,
+  "username": "john_doe",
+  "authorities": ["USER"]
+}
+```
+
+### WebSocket Endpoints
+
+#### Connect & Subscribe
+```javascript
+// Connect to WebSocket
+const stompClient = new StompClient({
+  brokerURL: "ws://localhost:8080/ws"
+});
+
+stompClient.onConnect = () => {
+  // Subscribe to scan updates
+  stompClient.subscribe("/topic/scans/123", (message) => {
+    const update = JSON.parse(message.body);
+    console.log(update);
+    // {
+    //   scanId: 123,
+    //   status: "IN_PROGRESS",
+    //   message: "Cloning repository...",
+    //   progress: 25
+    // }
+  });
+};
+
+stompClient.activate();
+```
+
+### Health Check Endpoints
+
+#### Backend Health
+```http
+GET /actuator/health
+Response: 200 OK
+{
+  "status": "UP",
+  "components": {
+    "db": {"status": "UP"},
+    "rabbitmq": {"status": "UP"},
+    "redis": {"status": "UP"}
+  }
+}
+```
+
+#### AI Service Health
+```http
+GET http://localhost:8000/health
+Response: 200 OK
+{
+  "status": "healthy",
+  "version": "1.0.0",
+  "llm_service": "groq"
+}
+```
 
 ---
 
 ## 🌐 Deployment
 
-DevSecWatch is designed for cloud-native deployment. See [DEPLOYMENT.md](DEPLOYMENT.md) for detailed instructions.
+See [DEPLOYMENT.md](DEPLOYMENT.md) for complete cloud deployment instructions (Railway, Vercel, AWS, etc.)
 
-### **Recommended Platforms**
+### Quick Deployment Checklist
 
-- **Backend Services**: Railway, Render, AWS ECS
-- **Frontend**: Vercel, Netlify, AWS Amplify
-- **Databases**: Railway PostgreSQL, AWS RDS, Supabase
-- **Message Queue**: CloudAMQP, AWS MQ
-- **Cache**: Redis Cloud, AWS ElastiCache
+**Prerequisites:**
+- [x] PostgreSQL database (Cloud provider or managed service)
+- [x] RabbitMQ instance
+- [x] Redis instance
+- [x] Groq API key
+- [x] GitHub OAuth credentials
+- [x] Docker registry (optional)
 
-### **Quick Deploy to Railway**
+**Cloud Platforms:**
+```
+Option 1: Railway (All-in-one)
+- Push to GitHub
+- Connect via Railway dashboard
+- Set environment variables
+- Deploy
 
-1. Fork this repository
-2. Create Railway account
-3. Create new project
-4. Add services:
-   - Backend API (root: `backend-api`)
-   - Worker Service (root: `worker-service`)
-   - AI Service (root: `ai-service`)
-   - PostgreSQL database
-   - Redis database
-5. Configure environment variables (see DEPLOYMENT.md)
-6. Deploy frontend to Vercel
+Option 2: AWS
+- RDS for PostgreSQL
+- ElastiCache for Redis
+- EC2 or ECS for services
+- API Gateway + ALB
 
-**Estimated Setup Time**: 1-2 hours
+Option 3: Vercel (Frontend only)
+- Connect GitHub repo
+- Set VITE_API_URL env var
+- Deploy
 
----
+Option 4: Docker Swarm / Kubernetes
+- Build Docker images
+- Push to registry
+- Deploy manifests
+```
 
-## 📸 Screenshots
+### Environment Variables for Deployment
 
-### Dashboard Overview
-![Dashboard](docs/screenshots/dashboard.png)
-*Real-time metrics and scan history at a glance*
+**Backend API**
+```env
+SPRING_DATASOURCE_URL=jdbc:postgresql://db-host:5432/devsecwatch
+SPRING_DATASOURCE_USERNAME=prod_user
+SPRING_DATASOURCE_PASSWORD=strong_password
+SPRING_RABBITMQ_HOST=rabbitmq-host
+SPRING_DATA_REDIS_URL=redis://redis-host:6379
+JWT_SECRET=<generated-64-char-key>
+FRONTEND_URL=https://app.devsecwatch.com
+GITHUB_CLIENT_ID=<GitHub App ID>
+GITHUB_CLIENT_SECRET=<GitHub App Secret>
+```
 
-### Scan Results
-![Scan Results](docs/screenshots/scan-results.png)
-*Detailed vulnerability analysis with severity indicators*
+**Worker Service**
+```env
+Same as Backend, plus:
+AI_SERVICE_URL=http://ai-service:8000
+TEMP_DIR=/tmp/devsecwatch
+```
 
-### AI Chat Assistant
-![AI Chat](docs/screenshots/ai-chat.png)
-*Interactive security consultation with context awareness*
+**AI Service**
+```env
+GROQ_API_KEY=gsk_xxxxx
+BACKEND_URL=https://api.devsecwatch.com
+REDIS_URL=redis://redis-host:6379
+```
 
-### Notification Center
-![Notifications](docs/screenshots/notifications.png)
-*Real-time alerts for scan completion and updates*
-
----
-
-## 🎖️ Project Highlights
-
-### **Technical Achievements**
-
-- ✅ **Microservices Architecture**: 4 independent, scalable services
-- ✅ **Asynchronous Processing**: RabbitMQ for non-blocking operations
-- ✅ **Real-Time Communication**: WebSocket with STOMP protocol
-- ✅ **AI Integration**: Groq LLM for intelligent insights
-- ✅ **Caching Strategy**: Redis for performance optimization
-- ✅ **Security Best Practices**: JWT, BCrypt, rate limiting, CORS
-- ✅ **Database Migration**: Flyway for version control
-- ✅ **Containerization**: Docker support for all services
-- ✅ **Type Safety**: TypeScript for frontend reliability
-- ✅ **Responsive Design**: Mobile-first UI with Tailwind CSS
-
-### **Business Value**
-
-- **Developer Productivity**: Reduces time to identify and fix vulnerabilities
-- **Security Education**: Helps teams learn secure coding practices
-- **Cost Reduction**: Prevents security issues before production
-- **Compliance Support**: Generates reports for audits
-- **Scalability**: Handles multiple concurrent scans
-
-### **Code Quality**
-
-- **Clean Architecture**: Separation of concerns across layers
-- **SOLID Principles**: Maintainable and extensible codebase
-- **Error Handling**: Comprehensive exception management
-- **Logging**: Structured logging for debugging
-- **Documentation**: Inline comments and README files
+**Frontend**
+```env
+VITE_API_URL=https://api.devsecwatch.com
+```
 
 ---
 
-## 🔮 Future Roadmap
+## 👨‍💻 Development Guide
 
-### **Phase 1: Enhanced Analysis**
-- [ ] Support for additional languages (Ruby, PHP, Rust)
-- [ ] Custom Semgrep rule creation
-- [ ] Dependency vulnerability scanning (SCA)
-- [ ] License compliance checking
+### Project Structure Overview
+- **backend-api/**: REST API orchestration & data management
+- **worker-service/**: Async scan processing & AI enrichment
+- **ai-service/**: LLM wrapper & validation
+- **devsecwatch-frontend/**: React SPA user interface
 
-### **Phase 2: Collaboration Features**
-- [ ] Team workspaces
-- [ ] Vulnerability assignment & tracking
-- [ ] Comment threads on findings
-- [ ] Integration with Jira/GitHub Issues
+### Development Workflow
 
-### **Phase 3: Advanced AI**
-- [ ] Automated fix generation (code patches)
-- [ ] Vulnerability trend analysis
-- [ ] Predictive security scoring
-- [ ] Custom AI model fine-tuning
+#### Backend Development
+```bash
+cd backend-api
 
-### **Phase 4: Enterprise Features**
-- [ ] SSO/SAML authentication
-- [ ] Role-based access control (RBAC)
-- [ ] Audit logs
-- [ ] SLA monitoring
-- [ ] White-label deployment
+# Build locally
+mvn clean package
 
-### **Phase 5: Integrations**
-- [ ] CI/CD pipeline plugins (Jenkins, GitLab CI, GitHub Actions)
-- [ ] IDE extensions (VS Code, IntelliJ)
-- [ ] Slack/Teams notifications
-- [ ] SIEM integration
+# Run with debug
+mvn spring-boot:run -Dspring-boot.run.arguments="--debug"
+
+# Run tests
+mvn test
+
+# Code style
+mvn spotless:apply
+```
+
+#### Worker Development
+```bash
+cd worker-service
+
+# Build
+mvn clean package
+
+# Test Semgrep integration
+mvn test -Dtest=SemgrepServiceTest
+
+# Check Docker availability
+docker ps
+```
+
+#### AI Service Development
+```bash
+cd ai-service
+
+# Install dev dependencies
+pip install -r requirements.txt
+pip install pytest pytest-asyncio
+
+# Run tests
+pytest tests/ -v
+
+# Test Groq integration
+python -m pytest tests/test_llm_service.py -v
+```
+
+#### Frontend Development
+```bash
+cd devsecwatch-frontend
+
+# Start dev server with hot reload
+npm run dev
+
+# Build for production
+npm run build
+
+# Preview production build
+npm run preview
+
+# Lint & format
+npm run lint
+```
+
+### Code Conventions
+
+**Java:**
+- Follow Spring conventions (PascalCase for classes, camelCase for methods)
+- Use Lombok annotations for boilerplate
+- Add `@Transactional` for database operations
+- Validate input with `@Valid` and custom validators
+
+**Python:**
+- Follow PEP 8 style guide
+- Use type hints for all functions
+- Add docstrings for classes and public methods
+- Use async/await for I/O operations
+
+**TypeScript:**
+- Strict mode enabled
+- Define interfaces for all data structures
+- Use arrow functions for consistency
+- Prop spreading for component composition
+
+**Database:**
+- Migrations via Flyway (Java) with V{N}__{description}.sql naming
+- Use meaningful column names and indexes
+- Add NOT NULL constraints where appropriate
+- Foreign keys with ON DELETE CASCADE/RESTRICT
+
+### Adding New Vulnerability Types
+
+1. **Add template** (ai-service/app/templates/explanations.py)
+```python
+def get_template(vuln_type: str):
+    templates = {
+        "NEW_VULN_TYPE": {
+            "description": "Plain English explanation...",
+            "fix": "Code example for fix..."
+        }
+    }
+```
+
+2. **Add Semgrep rule** (worker-service config)
+3. **Update frontend** (ScanDetail component)
+4. **Test** - Run test suite
+
+### Testing
+
+**Backend:**
+```bash
+mvn test
+
+# Specific test class
+mvn test -Dtest=ScanControllerTest
+
+# With coverage
+mvn test jacoco:report
+```
+
+**Frontend:**
+```bash
+# Run tests (if Jest configured)
+npm test
+
+# Watch mode
+npm test -- --watch
+```
+
+**Integration:**
+```bash
+# Run full stack tests
+python test_apis.py
+```
+
+---
+
+## 🧪 Testing
+
+### Unit Tests
+- Backend: JUnit 5 + Mockito
+- Frontend: Jest (if configured)
+- AI Service: pytest
+
+### Integration Tests
+```bash
+# Full stack test
+python test_apis.py
+
+# Specific test
+python test_apis.py TestScanCreation
+
+# With logging
+python test_apis.py -v
+```
+
+### Test Coverage
+```bash
+# Backend
+mvn test jacoco:report
+# Report: backend-api/target/site/jacoco/index.html
+
+# Frontend
+npm test -- --coverage
+```
+
+### Test Repositories
+- `test-repo/` contains sample vulnerable code
+- `semgrep_report.json` shows expected scan output
+
+---
+
+## 🔐 Security & Performance
+
+### Security Measures
+✅ JWT + Spring Security for authentication
+✅ HTTPS for all communications
+✅ CORS restrictions
+✅ Rate limiting (5 scans per 10 minutes)
+✅ SQL injection prevention via JPA parameterized queries
+✅ XSS prevention via React escaping + DOMPurify
+✅ CSRF protection via Spring Security
+✅ Input validation on all endpoints
+✅ Secrets detection during scans
+✅ Docker sandboxing for Semgrep
+
+### Performance Optimizations
+✅ Redis caching (7-day TTL on explanations)
+✅ Database connection pooling (HikariCP)
+✅ RabbitMQ async processing
+✅ Vite fast bundling + code splitting
+✅ Pagination for large result sets
+✅ Lazy loading on frontend
+✅ Gzip compression for responses
+✅ CDN-ready static assets
+
+### Monitoring & Logging
+- Spring Actuator metrics: `/actuator/prometheus`
+- Application logs: `{service}/logs/`
+- Database query logging (dev only)
+- RabbitMQ management UI: `http://localhost:15672`
 
 ---
 
 ## 🤝 Contributing
 
-Contributions are welcome! Please follow these guidelines:
+Contributions welcome! Please:
 
-1. **Fork the repository**
-2. **Create a feature branch**: `git checkout -b feature/amazing-feature`
-3. **Commit changes**: `git commit -m 'Add amazing feature'`
-4. **Push to branch**: `git push origin feature/amazing-feature`
-5. **Open a Pull Request**
+1. Fork the repository
+2. Create feature branch: `git checkout -b feature/your-feature`
+3. Commit changes: `git commit -am 'Add new feature'`
+4. Push to branch: `git push origin feature/your-feature`
+5. Submit pull request
 
-### **Development Guidelines**
+### Code Review Checklist
+- [ ] Code follows project conventions
+- [ ] Tests pass locally
+- [ ] No breaking changes
+- [ ] Documentation updated
+- [ ] Security implications reviewed
 
-- Follow existing code style
-- Write unit tests for new features
-- Update documentation
-- Ensure all tests pass before submitting PR
+---
+
+## 🔮 Future Roadmap
+
+### Phase 2 - Enhanced Scanning
+- [ ] GitLab & Bitbucket support
+- [ ] Container image scanning (Trivy integration)
+- [ ] Infrastructure-as-Code scanning (Terraform/CloudFormation)
+- [ ] Dynamic Application Security Testing (DAST)
+- [ ] Secrets rotation recommendations
+
+### Phase 3 - Intelligence & Insights
+- [ ] Machine learning-based false positive filtering
+- [ ] Vulnerability correlation & clustering
+- [ ] Risk scoring by business impact
+- [ ] Threat intel integration (Shodan, CVE feeds)
+- [ ] Benchmark against industry standards
+
+### Phase 4 - Developer Experience
+- [ ] IDE plugins (VS Code, IntelliJ)
+- [ ] Git pre-commit hooks
+- [ ] CLI tool for local scanning
+- [ ] Slack/Teams bot integration
+- [ ] Scheduled recurring scans
+
+### Phase 5 - Enterprise Features
+- [ ] Multi-tenant SaaS platform
+- [ ] SAML/Active Directory integration
+- [ ] Audit logging & compliance reports
+- [ ] Custom remediation workflows
+- [ ] On-premises deployment guide
 
 ---
 
 ## 📄 License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+MIT License - See LICENSE file for details
 
 ---
 
-## 👨‍💻 Author
+## 🙋 Support & Documentation
 
-**Your Name**
-- LinkedIn: [Your LinkedIn](https://linkedin.com/in/yourprofile)
-- GitHub: [@yourusername](https://github.com/yourusername)
-- Email: your.email@example.com
-
----
-
-## 🙏 Acknowledgments
-
-- **Semgrep**: For providing excellent SAST capabilities
-- **Groq**: For fast and reliable LLM inference
-- **Spring Boot**: For robust backend framework
-- **React Community**: For amazing frontend ecosystem
-- **Open Source Community**: For inspiration and tools
+- **Issues:** GitHub Issues
+- **Discussions:** GitHub Discussions
+- **Docs:** [ARCHITECTURE.md](ARCHITECTURE.md) | [DEPLOYMENT.md](DEPLOYMENT.md)
+- **Email:** support@devsecwatch.dev
 
 ---
 
-## 📊 Project Stats
+**Last Updated:** May 25, 2026
+**Maintained by:** DevSecWatch Team
 
-- **Lines of Code**: ~15,000+
-- **Services**: 4 microservices
-- **Technologies**: 20+ frameworks & libraries
-- **Development Time**: 3 months
-- **Test Coverage**: 75%+
-
----
-
-<div align="center">
-
-**Built with ❤️ for the Developer Community**
-
-[⭐ Star this repo](https://github.com/yourusername/DevSecWatch) | [🐛 Report Bug](https://github.com/yourusername/DevSecWatch/issues) | [✨ Request Feature](https://github.com/yourusername/DevSecWatch/issues)
-
-</div>

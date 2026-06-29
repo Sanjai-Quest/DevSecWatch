@@ -1,0 +1,402 @@
+﻿diff --git a/backend-api/src/main/java/com/devsecwatch/backend/controller/ScanController.java b/backend-api/src/main/java/com/devsecwatch/backend/controller/ScanController.java
+index c1688ca..a6c5572 100644
+--- a/backend-api/src/main/java/com/devsecwatch/backend/controller/ScanController.java
++++ b/backend-api/src/main/java/com/devsecwatch/backend/controller/ScanController.java
+@@ -2,6 +2,7 @@ package com.devsecwatch.backend.controller;
+ 
+ import com.devsecwatch.backend.dto.scan.ScanRequest;
+ import com.devsecwatch.backend.dto.scan.ScanResponse;
++import com.devsecwatch.backend.dto.scan.VulnerabilityResponse;
+ import com.devsecwatch.backend.service.ScanService;
+ import jakarta.validation.Valid;
+ import lombok.RequiredArgsConstructor;
+@@ -17,6 +18,7 @@ import org.springframework.security.core.userdetails.UserDetails;
+ import org.springframework.web.bind.annotation.*;
+ 
+ import java.net.URI;
++import java.util.List;
+ 
+ @RestController
+ @RequestMapping("/api/scans")
+@@ -48,6 +50,14 @@ public class ScanController {
+         return ResponseEntity.ok(scanService.getScanById(id, userDetails.getUsername()));
+     }
+ 
++    @GetMapping("/{id}/vulnerabilities")
++    public ResponseEntity<List<VulnerabilityResponse>> getVulnerabilitiesByScanId(
++            @PathVariable Long id,
++            @AuthenticationPrincipal UserDetails userDetails) {
++
++        return ResponseEntity.ok(scanService.getVulnerabilitiesByScanId(id, userDetails.getUsername()));
++    }
++
+     @GetMapping
+     public ResponseEntity<Page<ScanResponse>> getUserScans(
+             @RequestParam(defaultValue = "0") int page,
+diff --git a/backend-api/src/main/java/com/devsecwatch/backend/dto/scan/VulnerabilityResponse.java b/backend-api/src/main/java/com/devsecwatch/backend/dto/scan/VulnerabilityResponse.java
+index 62ad1a6..1b065e5 100644
+--- a/backend-api/src/main/java/com/devsecwatch/backend/dto/scan/VulnerabilityResponse.java
++++ b/backend-api/src/main/java/com/devsecwatch/backend/dto/scan/VulnerabilityResponse.java
+@@ -19,4 +19,6 @@ public class VulnerabilityResponse {
+     private String fixSuggestion;
+     private String cveId;
+     private Boolean isTemplateExplanation;
++    private Double cvssScore;
++    private String nvdDescription;
+ }
+diff --git a/backend-api/src/main/java/com/devsecwatch/backend/mapper/ScanMapper.java b/backend-api/src/main/java/com/devsecwatch/backend/mapper/ScanMapper.java
+index 0aadf4a..95fcfb3 100644
+--- a/backend-api/src/main/java/com/devsecwatch/backend/mapper/ScanMapper.java
++++ b/backend-api/src/main/java/com/devsecwatch/backend/mapper/ScanMapper.java
+@@ -38,6 +38,8 @@ public class ScanMapper {
+                                                                 .fixSuggestion(v.getFixSuggestion())
+                                                                 .cveId(v.getCveId())
+                                                                 .isTemplateExplanation(v.getIsTemplateExplanation())
++                                                                .cvssScore(v.getCvssScore())
++                                                                .nvdDescription(v.getNvdDescription())
+                                                                 .build())
+                                                 .collect(Collectors.toList())
+                                                 : Collections.emptyList())
+diff --git a/backend-api/src/main/java/com/devsecwatch/backend/model/Vulnerability.java b/backend-api/src/main/java/com/devsecwatch/backend/model/Vulnerability.java
+index c3951b0..01b3319 100644
+--- a/backend-api/src/main/java/com/devsecwatch/backend/model/Vulnerability.java
++++ b/backend-api/src/main/java/com/devsecwatch/backend/model/Vulnerability.java
+@@ -65,6 +65,12 @@ public class Vulnerability {
+     @Column(name = "semgrep_rule_id", length = 100)
+     private String semgrepRuleId;
+ 
++    @Column(name = "cvss_score")
++    private Double cvssScore;
++
++    @Column(name = "nvd_description", columnDefinition = "TEXT")
++    private String nvdDescription;
++
+     @CreatedDate
+     @Column(name = "created_at", updatable = false)
+     private LocalDateTime createdAt;
+diff --git a/backend-api/src/main/java/com/devsecwatch/backend/service/ScanService.java b/backend-api/src/main/java/com/devsecwatch/backend/service/ScanService.java
+index ca459bd..bea5f7e 100644
+--- a/backend-api/src/main/java/com/devsecwatch/backend/service/ScanService.java
++++ b/backend-api/src/main/java/com/devsecwatch/backend/service/ScanService.java
+@@ -3,6 +3,7 @@ package com.devsecwatch.backend.service;
+ import com.devsecwatch.backend.dto.message.ScanMessage;
+ import com.devsecwatch.backend.dto.scan.ScanRequest;
+ import com.devsecwatch.backend.dto.scan.ScanResponse;
++import com.devsecwatch.backend.dto.scan.VulnerabilityResponse;
+ import com.devsecwatch.backend.exception.*;
+ import com.devsecwatch.backend.mapper.ScanMapper;
+ import com.devsecwatch.backend.model.Scan;
+@@ -18,7 +19,9 @@ import org.springframework.stereotype.Service;
+ import org.springframework.transaction.annotation.Transactional;
+ 
+ import java.time.LocalDateTime;
++import java.util.List;
+ import java.util.UUID;
++import java.util.stream.Collectors;
+ 
+ @Service
+ @Slf4j
+@@ -113,6 +116,22 @@ public class ScanService {
+         return scanMapper.toResponse(scan);
+     }
+ 
++    @Transactional(readOnly = true)
++    public List<VulnerabilityResponse> getVulnerabilitiesByScanId(Long scanId, String username) {
++        Scan scan = scanRepository.findById(scanId)
++                .orElseThrow(() -> new ScanNotFoundException("Scan not found with ID: " + scanId));
++
++        User user = userRepository.findByUsername(username)
++                .orElseThrow(() -> new UserNotFoundException("User not found: " + username));
++
++        if (!scan.getUser().getId().equals(user.getId())) {
++            throw new UnauthorizedException("Cannot access another user's scan");
++        }
++
++        ScanResponse response = scanMapper.toResponse(scan);
++        return response.getVulnerabilities();
++    }
++
+     @Transactional(readOnly = true)
+     public Page<ScanResponse> getUserScans(String username, Pageable pageable) {
+         User user = userRepository.findByUsername(username)
+diff --git a/devsecwatch-frontend/src/pages/ScanDetail.tsx b/devsecwatch-frontend/src/pages/ScanDetail.tsx
+index c544760..5e7382d 100644
+--- a/devsecwatch-frontend/src/pages/ScanDetail.tsx
++++ b/devsecwatch-frontend/src/pages/ScanDetail.tsx
+@@ -7,6 +7,7 @@ export default function ScanDetail() {
+     const { scanId } = useParams<{ scanId: string }>();
+     const { currentScan, fetchScanById, pollScanStatus } = useScanStore();
+     const [expandedVuln, setExpandedVuln] = useState<number | null>(null);
++    const [activeTab, setActiveTab] = useState<'ALL' | 'SECRETS' | 'DEPENDENCIES'>('ALL');
+ 
+     useEffect(() => {
+         if (scanId) {
+@@ -40,6 +41,20 @@ export default function ScanDetail() {
+         }
+     };
+ 
++    const isSecret = (v: any) => {
++        if (!v.vulnerabilityType) return false;
++        const t = v.vulnerabilityType.toLowerCase();
++        return t.includes('secret') || t.includes('credential') || t.includes('key');
++    };
++    
++    const isDependency = (v: any) => v.vulnerabilityType === 'VULNERABLE_DEPENDENCY';
++
++    const renderVulns = currentScan?.vulnerabilities?.filter(vuln => {
++        if (activeTab === 'SECRETS') return isSecret(vuln);
++        if (activeTab === 'DEPENDENCIES') return isDependency(vuln);
++        return true;
++    }) || [];
++
+     return (
+         <Layout>
+             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+@@ -53,7 +68,13 @@ export default function ScanDetail() {
+                         <p className="mt-2 text-text-muted font-mono bg-surface inline-block px-2 py-1 rounded border border-border">{currentScan.repoUrl}</p>
+                     </div>
+                     <div>
+-                        <span className="text-sm text-text-muted font-mono">ID: {currentScan.id}</span>
++                        <span className="text-sm text-text-muted font-mono mr-4">ID: {currentScan.id}</span>
++                        <button 
++                            className="bg-primary hover:bg-primary-hover text-white px-4 py-2 rounded font-semibold text-sm transition-colors"
++                            onClick={() => window.open(`${import.meta.env.VITE_API_URL || 'http://localhost:8080'}/api/scans/${currentScan.id}/report`, "_blank")}
++                        >
++                            Download Report
++                        </button>
+                     </div>
+                 </div>
+ 
+@@ -94,11 +115,31 @@ export default function ScanDetail() {
+ 
+                         {currentScan.vulnerabilities && currentScan.vulnerabilities.length > 0 ? (
+                             <div className="card overflow-hidden p-0">
+-                                <div className="px-6 py-4 border-b border-border bg-surface/50">
++                                <div className="px-6 py-4 border-b border-border bg-surface/50 flex justify-between items-center">
+                                     <h2 className="text-lg font-semibold">Vulnerabilities Found</h2>
++                                    <div className="flex bg-black/20 rounded-lg p-1">
++                                        <button 
++                                            className={`px-4 py-1.5 rounded-md text-sm font-medium transition-colors ${activeTab === 'ALL' ? 'bg-surface text-white shadow-sm' : 'text-text-muted hover:text-white'}`}
++                                            onClick={() => setActiveTab('ALL')}
++                                        >
++                                            All
++                                        </button>
++                                        <button 
++                                            className={`px-4 py-1.5 rounded-md text-sm font-medium transition-colors ${activeTab === 'SECRETS' ? 'bg-surface text-white shadow-sm' : 'text-text-muted hover:text-white'}`}
++                                            onClick={() => setActiveTab('SECRETS')}
++                                        >
++                                            Secrets
++                                        </button>
++                                        <button 
++                                            className={`px-4 py-1.5 rounded-md text-sm font-medium transition-colors ${activeTab === 'DEPENDENCIES' ? 'bg-surface text-white shadow-sm' : 'text-text-muted hover:text-white'}`}
++                                            onClick={() => setActiveTab('DEPENDENCIES')}
++                                        >
++                                            Dependencies
++                                        </button>
++                                    </div>
+                                 </div>
+                                 <div className="divide-y divide-border">
+-                                    {currentScan.vulnerabilities.map((vuln) => (
++                                    {renderVulns.length > 0 ? renderVulns.map((vuln: any) => (
+                                         <div key={vuln.id} className="p-6 hover:bg-surface/30 transition-colors">
+                                             <div className="flex justify-between items-start mb-4">
+                                                 <div className="flex-1">
+@@ -110,6 +151,11 @@ export default function ScanDetail() {
+                                                     </p>
+                                                 </div>
+                                                 <div className="flex gap-2">
++                                                    {vuln.cvssScore && (
++                                                        <span className={`px-3 py-1 text-xs font-semibold rounded-full border ${vuln.cvssScore >= 9 ? 'bg-danger/10 text-danger border-danger/20' : vuln.cvssScore >= 7 ? 'bg-warning/10 text-warning border-warning/20' : 'bg-blue-500/10 text-blue-400 border-blue-500/20'}`}>
++                                                            CVSS: {vuln.cvssScore.toFixed(1)}
++                                                        </span>
++                                                    )}
+                                                     <span className={`px-3 py-1 text-xs font-semibold rounded-full border ${getSeverityColor(vuln.severity)}`}>
+                                                         {vuln.severity}
+                                                     </span>
+@@ -147,6 +193,14 @@ export default function ScanDetail() {
+                                                             </div>
+                                                         </div>
+                                                     </div>
++                                                    {vuln.nvdDescription && (
++                                                        <div>
++                                                            <p className="text-sm font-medium text-text-muted mb-2 uppercase tracking-wide">NVD Intelligence:</p>
++                                                            <div className="bg-black/30 border border-border p-4 rounded-lg">
++                                                                <p className="text-text-muted leading-relaxed text-sm">{ vuln.nvdDescription }</p>
++                                                            </div>
++                                                        </div>
++                                                    )}
+                                                     {vuln.cveId && (
+                                                         <p className="text-sm text-text-muted">
+                                                             Related CVE: <a href={`https://cve.mitre.org/cgi-bin/cvename.cgi?name=${vuln.cveId}`} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline font-mono">{vuln.cveId}</a>
+@@ -155,7 +209,11 @@ export default function ScanDetail() {
+                                                 </div>
+                                             )}
+                                         </div>
+-                                    ))}
++                                    )) : (
++                                        <div className="p-8 text-center text-text-muted">
++                                            No vulnerabilities match the selected filter.
++                                        </div>
++                                    )}
+                                 </div>
+                             </div>
+                         ) : (
+diff --git a/devsecwatch-frontend/src/types/index.ts b/devsecwatch-frontend/src/types/index.ts
+index f0bdefe..f4de7e0 100644
+--- a/devsecwatch-frontend/src/types/index.ts
++++ b/devsecwatch-frontend/src/types/index.ts
+@@ -59,6 +59,8 @@ export interface Vulnerability {
+     fixSuggestion: string;
+     cveId?: string;
+     isTemplateExplanation: boolean;
++    cvssScore?: number;
++    nvdDescription?: string;
+ }
+ 
+ export interface ScanWithVulnerabilities extends Scan {
+diff --git a/worker-service/src/main/java/com/devsecwatch/worker/model/Finding.java b/worker-service/src/main/java/com/devsecwatch/worker/model/Finding.java
+index 4e5190f..41de628 100644
+--- a/worker-service/src/main/java/com/devsecwatch/worker/model/Finding.java
++++ b/worker-service/src/main/java/com/devsecwatch/worker/model/Finding.java
+@@ -16,4 +16,7 @@ public class Finding {
+     private String ruleId;
+     private double semgrepConfidence;
+     private String cveId;
++    private String cweId;
++    private Double cvssScore;
++    private String nvdDescription;
+ }
+diff --git a/worker-service/src/main/java/com/devsecwatch/worker/model/Vulnerability.java b/worker-service/src/main/java/com/devsecwatch/worker/model/Vulnerability.java
+index 0a39db4..d30bf0b 100644
+--- a/worker-service/src/main/java/com/devsecwatch/worker/model/Vulnerability.java
++++ b/worker-service/src/main/java/com/devsecwatch/worker/model/Vulnerability.java
+@@ -65,6 +65,12 @@ public class Vulnerability {
+     @Column(name = "semgrep_rule_id", length = 100)
+     private String semgrepRuleId;
+ 
++    @Column(name = "cvss_score")
++    private Double cvssScore;
++
++    @Column(name = "nvd_description", columnDefinition = "TEXT")
++    private String nvdDescription;
++
+     @CreatedDate
+     @Column(name = "created_at", updatable = false)
+     private LocalDateTime createdAt;
+diff --git a/worker-service/src/main/java/com/devsecwatch/worker/service/ResultPersistenceService.java b/worker-service/src/main/java/com/devsecwatch/worker/service/ResultPersistenceService.java
+index 5534ed8..0995e3c 100644
+--- a/worker-service/src/main/java/com/devsecwatch/worker/service/ResultPersistenceService.java
++++ b/worker-service/src/main/java/com/devsecwatch/worker/service/ResultPersistenceService.java
+@@ -79,6 +79,8 @@ public class ResultPersistenceService {
+                 .cveId(truncate(finding.getCveId(), 50))
+                 .isTemplateExplanation(explanation.isTemplate())
+                 .semgrepRuleId(truncate(finding.getRuleId(), 100))
++                .cvssScore(finding.getCvssScore())
++                .nvdDescription(finding.getNvdDescription())
+                 .build();
+     }
+ 
+diff --git a/worker-service/src/main/java/com/devsecwatch/worker/service/SemgrepService.java b/worker-service/src/main/java/com/devsecwatch/worker/service/SemgrepService.java
+index 1809106..0cd52b3 100644
+--- a/worker-service/src/main/java/com/devsecwatch/worker/service/SemgrepService.java
++++ b/worker-service/src/main/java/com/devsecwatch/worker/service/SemgrepService.java
+@@ -34,6 +34,8 @@ public class SemgrepService {
+         ProcessBuilder processBuilder = new ProcessBuilder(
+                 "semgrep",
+                 "--config", "auto",
++                "--config", "p/secrets",
++                "--config", "p/trufflehog",
+                 "--json",
+                 "-o", "semgrep_output.json",
+                 ".");
+@@ -118,20 +120,29 @@ public class SemgrepService {
+ 
+             if (results.isArray()) {
+                 for (JsonNode node : results) {
+-                    Severity severity = mapSeverity(node.path("extra").path("severity").asText());
++                    String ruleId = node.path("check_id").asText();
++                    String ruleIdLower = ruleId.toLowerCase();
++                    Severity severity;
++                    
++                    if (ruleIdLower.contains("secret") || ruleIdLower.contains("credential") || ruleIdLower.contains("key")) {
++                        severity = Severity.HIGH;
++                    } else {
++                        severity = mapSeverity(node.path("extra").path("severity").asText());
++                    }
+ 
+                     // Filter: Only keep HIGH and CRITICAL
+                     if (severity == Severity.HIGH || severity == Severity.CRITICAL) {
+                         Finding finding = Finding.builder()
+-                                .ruleId(node.path("check_id").asText())
++                                .ruleId(ruleId)
+                                 .filePath(node.path("path").asText())
+                                 .lineNumber(node.path("start").path("line").asInt())
+                                 .severity(severity)
+                                 .description(node.path("extra").path("message").asText())
+                                 .codeSnippet(node.path("extra").path("lines").asText()) // Simple extraction
+-                                .vulnerabilityType(node.path("check_id").asText()) // Using rule ID as type for now
++                                .vulnerabilityType(ruleId) // Using rule ID as type for now
+                                 .semgrepConfidence(0.8) // Placeholder
+                                 .cveId(node.path("extra").path("metadata").path("cve").asText(null))
++                                .cweId(extractCwe(node.path("extra").path("metadata").path("cwe")))
+                                 .build();
+                         findings.add(finding);
+                     }
+@@ -152,6 +163,12 @@ public class SemgrepService {
+                 .build();
+     }
+ 
++    private String extractCwe(JsonNode cweNode) {
++        if (cweNode == null || cweNode.isNull() || cweNode.isMissingNode()) return null;
++        if (cweNode.isArray() && cweNode.size() > 0) return cweNode.get(0).asText();
++        return cweNode.asText();
++    }
++
+     private Severity mapSeverity(String semgrepSeverity) {
+         if (semgrepSeverity == null)
+             return Severity.LOW;
+diff --git a/worker-service/src/main/java/com/devsecwatch/worker/worker/ScanWorker.java b/worker-service/src/main/java/com/devsecwatch/worker/worker/ScanWorker.java
+index 50882a2..a5deb7d 100644
+--- a/worker-service/src/main/java/com/devsecwatch/worker/worker/ScanWorker.java
++++ b/worker-service/src/main/java/com/devsecwatch/worker/worker/ScanWorker.java
+@@ -13,6 +13,7 @@ import com.devsecwatch.worker.model.enums.ConfidenceLevel;
+ import com.devsecwatch.worker.model.enums.ScanStatus;
+ import com.devsecwatch.worker.repository.ScanRepository;
+ import com.devsecwatch.worker.service.*;
++import com.devsecwatch.worker.model.Finding;
+ import com.rabbitmq.client.Channel;
+ import lombok.RequiredArgsConstructor;
+ import lombok.extern.slf4j.Slf4j;
+@@ -39,7 +40,9 @@ public class ScanWorker {
+     private final GitService gitService;
+     private final FileService fileService;
+     private final SemgrepService semgrepService;
++    private final DependencyScanner dependencyScanner;
+     private final AIEnrichmentService aiEnrichmentService;
++    private final NvdEnrichmentService nvdEnrichmentService;
+     private final ResultPersistenceService resultPersistenceService;
+     private final WebSocketNotificationService notificationService;
+ 
+@@ -96,6 +99,9 @@ public class ScanWorker {
+             scan.setLinesOfCode(loc);
+             scanRepository.save(scan);
+ 
++            // 2.5 Run Dependency Scanner (SCA)
++            List<EnrichedFinding> dependFindings = dependencyScanner.scanDependencies(repoPath);
++
+             // 3. Run Semgrep Analysis
+             long semgrepStart = System.currentTimeMillis();
+             SemgrepResult result = semgrepService.runScan(repoPath);
+@@ -106,6 +112,12 @@ public class ScanWorker {
+             List<EnrichedFinding> enrichedFindings = aiEnrichmentService.enrichFindings(result.getFindings());
+             aiDuration = System.currentTimeMillis() - aiStart;
+ 
++            // 4.5. NVD Enrichment
++            enrichedFindings = nvdEnrichmentService.enrichWithNvdInfo(enrichedFindings);
++
++            // 4.6. Merge Dependency Findings (Bypass AI)
++            enrichedFindings.addAll(dependFindings);
++
+             // Calculate Metrics
+             // Assuming cache hit rate is tracked in AI service logs or we calculate here
+             // For now, let's calc raw if needed or just pass 0 if not exposed.

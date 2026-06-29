@@ -76,4 +76,14 @@ public class ScanController {
 
         scanService.deleteScan(id, userDetails.getUsername());
     }
+
+    @PostMapping("/{id}/cancel")
+    public ResponseEntity<Void> cancelScan(
+            @PathVariable Long id,
+            @AuthenticationPrincipal UserDetails userDetails) {
+
+        log.info("Received cancellation request for scan ID: {} from user: {}", id, userDetails.getUsername());
+        scanService.cancelScan(id, userDetails.getUsername());
+        return ResponseEntity.ok().build();
+    }
 }

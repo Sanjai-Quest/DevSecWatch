@@ -46,4 +46,15 @@ public class MessagePublisherService {
             throw new MessagePublishException("Failed to publish scan job", e);
         }
     }
+
+    public void publishScanCancellation(com.devsecwatch.backend.dto.message.ScanCancellationMessage message) {
+        log.info("Publishing scan cancellation for scan ID: {}", message.getScanId());
+        try {
+            rabbitTemplate.convertAndSend(com.devsecwatch.backend.config.RabbitMQConfig.SCAN_CANCELLATION_EXCHANGE, "", message);
+            log.info("Successfully published scan cancellation for scan ID: {}", message.getScanId());
+        } catch (AmqpException e) {
+            log.error("Failed to publish scan cancellation: {}", e.getMessage(), e);
+            throw new MessagePublishException("Failed to publish scan cancellation", e);
+        }
+    }
 }

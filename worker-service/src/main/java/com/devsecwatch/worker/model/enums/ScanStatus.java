@@ -1,5 +1,5 @@
 package com.devsecwatch.worker.model.enums;
 
 public enum ScanStatus {
-    QUEUED, PROCESSING, COMPLETED, FAILED
+    QUEUED, IN_PROGRESS, COMPLETED, FAILED
 }

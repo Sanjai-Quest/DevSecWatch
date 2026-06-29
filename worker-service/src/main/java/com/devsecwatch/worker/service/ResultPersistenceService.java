@@ -8,8 +8,8 @@ import com.devsecwatch.worker.model.enums.Severity;
 import com.devsecwatch.worker.repository.ScanMetricsRepository;
 import com.devsecwatch.worker.repository.ScanRepository;
 import com.devsecwatch.worker.repository.VulnerabilityRepository;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -18,14 +18,24 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 @Service
-@Slf4j
-@RequiredArgsConstructor
 public class ResultPersistenceService {
+
+    private static final Logger log = LoggerFactory.getLogger(ResultPersistenceService.class);
 
     private final VulnerabilityRepository vulnerabilityRepository;
     private final ScanRepository scanRepository;
     private final ScanMetricsRepository metricsRepository;
     private final ConfidenceScoreService confidenceScoreService;
+
+    public ResultPersistenceService(VulnerabilityRepository vulnerabilityRepository,
+                                   ScanRepository scanRepository,
+                                   ScanMetricsRepository metricsRepository,
+                                   ConfidenceScoreService confidenceScoreService) {
+        this.vulnerabilityRepository = vulnerabilityRepository;
+        this.scanRepository = scanRepository;
+        this.metricsRepository = metricsRepository;
+        this.confidenceScoreService = confidenceScoreService;
+    }
 
     @Transactional(propagation = org.springframework.transaction.annotation.Propagation.REQUIRES_NEW, rollbackFor = Exception.class)
     public void saveScanResults(Scan scan, List<EnrichedFinding> enrichedFindings, ScanMetrics metrics) {
@@ -58,6 +68,12 @@ public class ResultPersistenceService {
 
         log.info("Successfully saved {} vulnerabilities for scan {}", vulnerabilities.size(), scan.getId());
     }
+    
+    public void storeFindingsForEnrichment(Long scanId, List<Vulnerability> vulnerabilities) {
+        // Placeholder for future logic if the AI worker needs a dedicated "pickup" signal
+        // or for triggering the background enrichment message
+        log.info("Findings stored for enrichment for scan {}", scanId);
+    }
 
     private Vulnerability buildVulnerability(Scan scan, EnrichedFinding ef) {
         Finding finding = ef.getFinding();
@@ -72,6 +88,7 @@ public class ResultPersistenceService {
                 .vulnerabilityType(truncate(finding.getVulnerabilityType(), 100))
                 .severity(finding.getSeverity())
                 .confidence(confidence)
+                .aiStatus(com.devsecwatch.worker.model.enums.AiStatus.PENDING)
                 .description(explanation.getDescription())
                 .codeSnippet(finding.getCodeSnippet())
                 .fixSuggestion(explanation.getFixSuggestion() != null ? explanation.getFixSuggestion()

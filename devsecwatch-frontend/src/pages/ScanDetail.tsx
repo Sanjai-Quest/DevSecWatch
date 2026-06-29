@@ -159,6 +159,16 @@ export default function ScanDetail() {
                                                     <span className={`px-3 py-1 text-xs font-semibold rounded-full border ${getSeverityColor(vuln.severity)}`}>
                                                         {vuln.severity}
                                                     </span>
+                                                    {vuln.aiStatus === 'PENDING' && (
+                                                        <span className="px-3 py-1 text-xs font-semibold rounded-full bg-primary/10 text-primary border border-primary/20 animate-pulse">
+                                                            AI Pending...
+                                                        </span>
+                                                    )}
+                                                    {vuln.aiStatus === 'FAILED' && (
+                                                        <span className="px-3 py-1 text-xs font-semibold rounded-full bg-danger/10 text-danger border border-danger/20">
+                                                            AI Failed
+                                                        </span>
+                                                    )}
                                                     <span className="px-3 py-1 text-xs font-semibold rounded-full bg-surface text-text-muted border border-border">
                                                         {vuln.confidence} Confidence
                                                     </span>
@@ -184,12 +194,22 @@ export default function ScanDetail() {
                                                     </div>
                                                     <div>
                                                         <p className="text-sm font-medium text-text-muted mb-2 uppercase tracking-wide">AI Recommendation:</p>
-                                                        <div className="bg-primary/5 border border-primary/20 p-4 rounded-lg">
+                                                        <div className={`p-4 rounded-lg border ${vuln.aiStatus === 'PENDING' ? 'bg-primary/5 border-primary/20 animate-pulse' : vuln.aiStatus === 'FAILED' ? 'bg-danger/5 border-danger/10' : 'bg-primary/5 border-primary/20'}`}>
                                                             <div className="flex items-start gap-3">
-                                                                <div className="mt-0.5 text-primary">
-                                                                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z" /><path d="M19 10v2a7 7 0 0 1-14 0v-2" /><line x1="12" y1="19" x2="12" y2="22" /><line x1="8" y1="22" x2="16" y2="22" /></svg>
+                                                                <div className={`mt-0.5 ${vuln.aiStatus === 'FAILED' ? 'text-danger' : 'text-primary'}`}>
+                                                                    {vuln.aiStatus === 'PENDING' ? (
+                                                                        <div className="h-5 w-5 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>
+                                                                    ) : (
+                                                                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z" /><path d="M19 10v2a7 7 0 0 1-14 0v-2" /><line x1="12" y1="19" x2="12" y2="22" /><line x1="8" y1="22" x2="16" y2="22" /></svg>
+                                                                    )}
                                                                 </div>
-                                                                <p className="text-text leading-relaxed">{vuln.fixSuggestion}</p>
+                                                                <div>
+                                                                    {vuln.aiStatus === 'PENDING' ? (
+                                                                        <p className="text-primary italic">Deep analysis in progress. Please wait...</p>
+                                                                    ) : (
+                                                                        <p className="text-text leading-relaxed">{vuln.fixSuggestion}</p>
+                                                                    )}
+                                                                </div>
                                                             </div>
                                                         </div>
                                                     </div>

@@ -36,9 +36,15 @@ public class RateLimitInterceptor implements HandlerInterceptor {
             username = authentication.getPrincipal().toString();
         }
 
-        if (!rateLimiterService.allowRequest(username)) {
-            int remainingSeconds = 60 - LocalDateTime.now().getSecond();
-            throw new RateLimitExceededException("Rate limit exceeded. Try again later.", remainingSeconds);
+        // Exempt GET requests from strict rate limiting (polling/viewing)
+        if ("GET".equalsIgnoreCase(request.getMethod())) {
+            return true;
+        }
+
+        io.github.bucket4j.ConsumptionProbe probe = rateLimiterService.tryConsumeAndReturnProbe(username);
+        if (probe != null && !probe.isConsumed()) {
+            int remainingSeconds = (int) (probe.getNanosToWaitForRefill() / 1_000_000_000L);
+            throw new RateLimitExceededException("Rate limit exceeded. Try again in " + remainingSeconds + " seconds.", remainingSeconds);
         }
 
         return true;

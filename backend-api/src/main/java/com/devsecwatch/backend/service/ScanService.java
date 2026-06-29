@@ -33,11 +33,37 @@ public class ScanService {
     private final MessagePublisherService messagePublisherService;
     private final GitService gitService;
     private final ScanMapper scanMapper;
+    private final org.springframework.data.redis.core.RedisTemplate<String, Object> redisTemplate;
+    private final RateLimiterService rateLimiterService;
+
+    private static final String SCAN_LOCK_KEY_PREFIX = "scanning:";
 
     @Transactional
     public ScanResponse createScan(ScanRequest request, String username) {
         User user = userRepository.findByUsername(username)
                 .orElseThrow(() -> new UserNotFoundException("User not found: " + username));
+
+        // 0. Rate Limiting Check
+        io.github.bucket4j.ConsumptionProbe probe = rateLimiterService.tryConsumeAndReturnProbe(username);
+        if (probe != null && !probe.isConsumed()) {
+            log.warn("Rate limit exceeded for user: {}", username);
+            int remainingSeconds = (int) (probe.getNanosToWaitForRefill() / 1_000_000_000L);
+            throw new RateLimitExceededException(
+                    "You have reached the scan limit (5 scans per 10 minutes). Please wait " + remainingSeconds + " seconds before trying again.", remainingSeconds);
+        }
+
+        // 1. Deduplication Check
+        String lockKey = SCAN_LOCK_KEY_PREFIX + request.getRepoUrl() + ":" + user.getId();
+        Object existingScanId = redisTemplate.opsForValue().get(lockKey);
+
+        if (existingScanId != null) {
+            log.info("Scan already in progress for repository: {} and user: {}. Returning existing scan ID: {}", 
+                    request.getRepoUrl(), username, existingScanId);
+            Long id = Long.valueOf(existingScanId.toString());
+            Scan scan = scanRepository.findById(id)
+                    .orElseThrow(() -> new ScanNotFoundException("Existing scan not found in database: " + id));
+            return scanMapper.toResponse(scan);
+        }
 
         log.info("Creating scan for repository: {} by user: {}", request.getRepoUrl(), username);
 
@@ -57,12 +83,13 @@ public class ScanService {
                 .highCount(0)
                 .mediumCount(0)
                 .lowCount(0)
-                // createdAt handles by @CreatedDate but setting it manually just in case
-                // Actually @CreatedDate works on flush, but we might want it immediately
                 .build();
 
         scan = scanRepository.save(scan);
         log.info("Scan created with ID: {}", scan.getId());
+
+        // Set lock in Redis with 15-minute TTL
+        redisTemplate.opsForValue().set(lockKey, scan.getId(), java.time.Duration.ofMinutes(15));
 
         ScanMessage message = ScanMessage.builder()
                 .scanId(scan.getId())
@@ -85,15 +112,11 @@ public class ScanService {
                             } catch (MessagePublishException e) {
                                 log.error("Failed to publish scan message after commit for scan ID: {}",
                                         message.getScanId(), e);
-                                // Note: Cannot rollback here as transaction is already committed.
-                                // In production, might need a dead-letter strategy or secondary status update.
                             }
                         }
                     });
             log.info("Registered scan message publication for after commit, scan ID: {}", scan.getId());
         } catch (Exception e) {
-            // Fallback if synchronization fails (e.g. no active transaction, though we are
-            // in @Transactional)
             log.warn("Could not register transaction synchronization, publishing immediately", e);
             messagePublisherService.publishScanJob(message);
         }
@@ -159,5 +182,38 @@ public class ScanService {
 
         scanRepository.delete(scan);
         log.info("Deleted scan ID: {} by user: {}", scanId, username);
+    }
+
+    @Transactional
+    public void cancelScan(Long scanId, String username) {
+        Scan scan = scanRepository.findById(scanId)
+                .orElseThrow(() -> new ScanNotFoundException("Scan not found with ID: " + scanId));
+
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new UserNotFoundException("User not found: " + username));
+
+        if (!scan.getUser().getId().equals(user.getId())) {
+            throw new UnauthorizedException("Cannot cancel another user's scan");
+        }
+
+        if (scan.getStatus() != ScanStatus.QUEUED && scan.getStatus() != ScanStatus.PROCESSING) {
+            throw new IllegalStateException("Cannot cancel scan in " + scan.getStatus() + " status");
+        }
+
+        log.info("Cancelling scan ID: {} by user: {}", scanId, username);
+        scan.setStatus(ScanStatus.FAILED);
+        scan.setErrorMessage("Scan cancelled by user");
+        scan.setCompletedAt(LocalDateTime.now());
+        scanRepository.save(scan);
+
+        com.devsecwatch.backend.dto.message.ScanCancellationMessage message = 
+            com.devsecwatch.backend.dto.message.ScanCancellationMessage.builder()
+                .scanId(scanId)
+                .username(username)
+                .correlationId(UUID.randomUUID().toString())
+                .timestamp(LocalDateTime.now())
+                .build();
+
+        messagePublisherService.publishScanCancellation(message);
     }
 }

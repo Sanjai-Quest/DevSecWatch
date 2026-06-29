@@ -34,7 +34,7 @@ server:
   port: 8081  # Run on different port than backend
 
 app:
-  temp-directory: ${TEMP_DIR:/tmp/devsecwatch}
+  temp-directory: ${TEMP_DIR:C:/tmp/devsecwatch}
 
 ai:
   service:

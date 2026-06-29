@@ -2,8 +2,8 @@ package com.devsecwatch.worker.service;
 
 import com.devsecwatch.worker.dto.notification.ScanNotification;
 import com.devsecwatch.worker.model.Scan;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -11,15 +11,27 @@ import org.springframework.stereotype.Service;
 import java.time.LocalDateTime;
 
 @Service
-@RequiredArgsConstructor
-@Slf4j
 public class WebSocketNotificationService {
+
+    private static final Logger log = LoggerFactory.getLogger(WebSocketNotificationService.class);
 
     private final RabbitTemplate rabbitTemplate;
     private final com.devsecwatch.worker.repository.UserRepository userRepository;
 
     @Value("${rabbitmq.queue.notifications:scan.notifications}")
     private String notificationQueue;
+
+    public WebSocketNotificationService(RabbitTemplate rabbitTemplate, 
+                                        com.devsecwatch.worker.repository.UserRepository userRepository) {
+        this.rabbitTemplate = rabbitTemplate;
+        this.userRepository = userRepository;
+    }
+
+    public void notifyScanUpdate(Scan scan, String message) {
+        // Compatibility method for ScanWorker calls
+        log.info("Scan status update for {}: {}", scan.getId(), message);
+        notifyScanComplete(scan); // Reuse notification logic
+    }
 
     public void notifyScanComplete(Scan scan) {
         String username = "unknown";

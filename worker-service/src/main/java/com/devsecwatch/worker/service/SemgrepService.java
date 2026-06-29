@@ -1,13 +1,15 @@
 package com.devsecwatch.worker.service;
 
+import com.devsecwatch.worker.exception.ScanExecutionException;
+import com.devsecwatch.worker.exception.OutOfMemoryException;
 import com.devsecwatch.worker.exception.SemgrepExecutionException;
 import com.devsecwatch.worker.model.Finding;
 import com.devsecwatch.worker.model.SemgrepResult;
 import com.devsecwatch.worker.model.enums.Severity;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 import java.io.BufferedReader;
@@ -19,85 +21,116 @@ import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 @Service
-@Slf4j
-@RequiredArgsConstructor
 public class SemgrepService {
 
+    private static final Logger log = LoggerFactory.getLogger(SemgrepService.class);
     private final ObjectMapper objectMapper;
+    private final ScanProcessRegistry processRegistry;
 
-    public SemgrepResult runScan(Path repoPath) {
-        log.info("Running Semgrep on {}", repoPath);
+    public SemgrepService(ObjectMapper objectMapper, ScanProcessRegistry processRegistry) {
+        this.objectMapper = objectMapper;
+        this.processRegistry = processRegistry;
+    }
 
-        Path jsonOutputPath = repoPath.resolve("semgrep_output.json");
+    public SemgrepResult runScan(Path repoPath, Long scanId) {
+        log.info("Running Semgrep in Docker on {}", repoPath);
+        String containerName = "semgrep-scan-" + scanId;
+        Path customRulesPath = repoPath.resolve(".devsecwatch_secrets.yml");
 
-        // Command: semgrep --config auto --json -o semgrep_output.json .
-        ProcessBuilder processBuilder = new ProcessBuilder(
-                "semgrep",
-                "--config", "auto",
-                "--config", "p/secrets",
-                "--config", "p/trufflehog",
-                "--json",
-                "-o", "semgrep_output.json",
-                ".");
-        processBuilder.directory(repoPath.toFile());
-        // Do NOT redirect error stream to stdout, keep them separate to avoid polluting
-        // JSON
+        // Copy custom rules to repo path for semgrep to access
+        try {
+            java.io.InputStream is = getClass().getResourceAsStream("/semgrep-rules/secrets.yml");
+            if (is != null) {
+                java.nio.file.Files.copy(is, customRulesPath, java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+            }
+        } catch (IOException e) {
+            log.warn("Could not copy custom semgrep rules: {}", e.getMessage());
+        }
+
+        List<String> cmd = new ArrayList<>(java.util.Arrays.asList(
+                "docker", "run", "--name", containerName, "--rm", "--read-only", "--tmpfs", "/tmp",
+                "--memory=512m", "--cpus=0.5", "--network=none", 
+                "--pids-limit=50", "--cap-drop=ALL", "--security-opt=no-new-privileges", "--user=1000:1000",
+                "-v", repoPath.toAbsolutePath().toString() + ":/src:ro",
+                "--workdir", "/src",
+                "returntocorp/semgrep:latest",
+                "semgrep", "scan", "--json", "--config=auto"
+        ));
+
+        if (customRulesPath.toFile().exists()) {
+            cmd.add("--config=/src/.devsecwatch_secrets.yml");
+        }
+        cmd.add("/src");
+
+        ProcessBuilder processBuilder = createProcessBuilder(cmd);
         processBuilder.redirectErrorStream(false);
-
-        // Set UTF-8 encoding variables
-        processBuilder.environment().put("PYTHONIOENCODING", "utf-8");
-        processBuilder.environment().put("PYTHONUTF8", "1");
-        processBuilder.environment().put("LC_ALL", "en_US.UTF-8");
 
         long startTime = System.currentTimeMillis();
         Process process = null;
         try {
             process = processBuilder.start();
+            processRegistry.registerProcess(scanId, process);
+            
+            final Process activeProcess = process;
 
-            // Consume stdout and stderr streams to prevent blocking
-            consumeStream(process.getInputStream());
-            consumeStream(process.getErrorStream());
+            // Consume stderr to prevent blocking
+            consumeStream(activeProcess.getErrorStream());
+            
+            // Read stdout asynchronously
+            java.util.concurrent.CompletableFuture<String> stdoutFuture = java.util.concurrent.CompletableFuture.supplyAsync(() -> {
+                try {
+                    return new String(activeProcess.getInputStream().readAllBytes(), java.nio.charset.StandardCharsets.UTF_8);
+                } catch (IOException e) {
+                    throw new RuntimeException("Failed to read stdout", e);
+                }
+            });
 
-            boolean finished = process.waitFor(180, TimeUnit.SECONDS);
+            boolean finished = process.waitFor(300, TimeUnit.SECONDS);
             if (!finished) {
                 process.destroyForcibly();
-                throw new SemgrepExecutionException("Semgrep timeout (>180s)");
+                throw new ScanExecutionException("Semgrep timeout (>300s)");
             }
 
             int exitCode = process.exitValue();
-            if (exitCode != 0) {
-                // Check if file exists anyway, sometimes non-zero exit code generates output
-                if (!jsonOutputPath.toFile().exists()) {
-                    throw new SemgrepExecutionException("Semgrep failed with exit code: " + exitCode);
-                }
+            if (exitCode == 137) {
+                throw new OutOfMemoryException("Repository scan breached 512MB limit.");
+            }
+            if (exitCode != 0 && exitCode != 1) {
+                throw new ScanExecutionException("Docker Semgrep failed with exit code: " + exitCode);
             }
 
-            if (!jsonOutputPath.toFile().exists()) {
-                // Fallback: try capturing stdout if file wasn't created (shouldn't happen with
-                // -o)
-                throw new SemgrepExecutionException("Semgrep passed but no output file created");
+            String jsonOutput = stdoutFuture.join();
+            if (jsonOutput == null || jsonOutput.trim().isEmpty()) {
+                throw new ScanExecutionException("Semgrep produced no output on stdout");
             }
-
-            // Read the JSON file content
-            byte[] bytes = java.nio.file.Files.readAllBytes(jsonOutputPath);
-            String jsonOutput = new String(bytes, java.nio.charset.StandardCharsets.UTF_8);
 
             return parseOutput(jsonOutput, System.currentTimeMillis() - startTime);
 
         } catch (IOException | InterruptedException e) {
-            if (e instanceof InterruptedException) {
-                Thread.currentThread().interrupt();
-            }
-            throw new SemgrepExecutionException("Semgrep execution failed: " + e.getMessage());
+            if (e instanceof InterruptedException) Thread.currentThread().interrupt();
+            throw new ScanExecutionException("Docker Semgrep execution error: " + e.getMessage(), e);
+        } catch (java.util.concurrent.CompletionException e) {
+            throw new ScanExecutionException("Error reading Semgrep stdout", e.getCause());
         } finally {
-            if (process != null && process.isAlive()) {
-                process.destroyForcibly();
+            if (process != null) {
+                processRegistry.unregisterProcess(scanId, process);
+                if (process.isAlive()) process.destroyForcibly();
             }
-            // Cleanup temp file
-            try {
-                java.nio.file.Files.deleteIfExists(jsonOutputPath);
-            } catch (IOException ignored) {
-            }
+            forceCleanupContainer(containerName);
+            try { java.nio.file.Files.deleteIfExists(customRulesPath); } catch (IOException ignored) {}
+        }
+    }
+
+    protected ProcessBuilder createProcessBuilder(List<String> cmd) {
+        return new ProcessBuilder(cmd);
+    }
+
+    private void forceCleanupContainer(String containerName) {
+        try {
+            new ProcessBuilder("docker", "rm", "-f", containerName).start().waitFor();
+            log.info("Force killed container: {}", containerName);
+        } catch (Exception e) {
+            log.error("Failed to cleanup container {}", containerName, e);
         }
     }
 
@@ -150,8 +183,6 @@ public class SemgrepService {
             }
         } catch (Exception e) {
             log.error("Failed to parse Semgrep output: {}", e.getMessage());
-            // Might allow empty results if parsing fails, or throw exception.
-            // Better to throw.
             throw new SemgrepExecutionException("Failed to parse Semgrep output");
         }
 
